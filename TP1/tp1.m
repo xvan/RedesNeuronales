@@ -30,7 +30,7 @@ function out=hopfield(seed,w)
     if mod(iteration,1)== 0
       imshow(reshape(out,45,60));
       drawnow;
-      pause(0.2)
+      pause(0.3)
     endif
     
     %disp(iteration++);
@@ -104,14 +104,13 @@ function SpuriousImages=GenerateOddSpurious(Images)
   ExtendedImages=[Images ; -Images];
   v=1:size(ExtendedImages)(1);
   c=combnk(v,3);
-  SpuriousImages=[];
-  for combIdx = 1:length(c)
-    Image=[];
+  SpuriousImages=zeros(size(c)(1),size(ExtendedImages)(2));
+  for combIdx = 1:length(c)    
     for imgIdx = 1:3
-      Image+=ExtendedImages(c(combIdx,imgIdx));
-    endfor
-    SpuriousImages=[SpuriousImages; (Image>0)*2-1];
+      SpuriousImages(combIdx,:)+=ExtendedImages(c(combIdx,imgIdx),:);
+    endfor    
   endfor
+  SpuriousImages=(SpuriousImages>0)*2-1;
 endfunction
 
 function detected=TestSpurious(Images,W)
@@ -126,20 +125,6 @@ W=CalculateWeights(Images);
 %Learned=AutoTest(Images,Images,W)
 %DetectedNoise=TestNoise(Images,W)
 %DetectedMasked=TestMasked(Images,W)
-
-
-ExtendedImages=[Images ; -Images];
-v=1:size(ExtendedImages)(1);
-c=combnk(v,3);
-SpuriousImages=[];
-for combIdx = 1:length(c)
-  Image=[];
-  for imgIdx = 1:3
-    Image+=ExtendedImages(c(combIdx,imgIdx),:);
-  endfor
-  SpuriousImages=[SpuriousImages; (Image>0)*2-1];
-endfor
-
 DetectedNegativeSpurious=TestSpurious(Images,W)
 
 %Learned45x60=testHopfield(ImageNames45x60)
