@@ -20,17 +20,17 @@ function out=defsgn(val)
 endfunction
 
 %Hopfield Iteration
-function out=hopfield(seed,w)
+function out=hopfield(seed,w,N,M)
   out=seed;
   iteration=1;
   changed=false;
     
-  imshow(reshape(out,45,60));
+  %imshow(reshape(out,N,M));
   do    
     if mod(iteration,1)== 0
-      imshow(reshape(out,45,60));
-      drawnow;
-      pause(0.3)
+      %imshow(reshape(out,N,M));
+      %drawnow;
+      %pause(0.3)
     endif
     
     %disp(iteration++);
@@ -59,11 +59,11 @@ function W=CalculateWeights(Images)
   endfor
 endfunction
 
-function Learned=AutoTest(SourceImages, TargetImages, W)
+function Learned=AutoTest(SourceImages, TargetImages, W,N,M)
   %chequeo si aprendio evaluando las mismas imagenes.
   Learned=[];
   for idx = 1:size(SourceImages)(1)
-    Learned=[Learned, all(hopfield(SourceImages(idx,:),W) == TargetImages(idx,:))];
+    Learned=[Learned, all(hopfield(SourceImages(idx,:),W,N,M) == TargetImages(idx,:))];
   endfor
 endfunction
 
@@ -72,11 +72,11 @@ function ImagesWithNoise=AddNoise(Images,level)
   ImagesWithNoise = Images .* ( rand(size(Images)) > level) * 2 - 1;
 endfunction
 
-function detected=TestNoise(Images,W)
+function detected=TestNoise(Images,W,N,M)
   detected=[];
   for lvl=[0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
     ImagesWithNoise = AddNoise(Images,lvl);
-    detected=[ detected; AutoTest(ImagesWithNoise,Images,W)];
+    detected=[ detected; AutoTest(ImagesWithNoise,Images,W,N,M)];
   endfor
 endfunction
 
@@ -91,11 +91,11 @@ function MaskedImages=MaskImages(Images,N,M,lvl)
   MaskedImages=(Images + repmat(reshape(mask,1,[]),size(Images)(1),1) >= 0 )*2-1 ;
 endfunction
 
-function detected=TestMasked(Images,W)
+function detected=TestMasked(Images,W,N,M)
   detected=[];
   for lvl=[0.2:0.2:0.8]
-    MaskedImages = MaskImages(Images,45,60,lvl);
-    detected=[ detected; AutoTest(MaskedImages,Images,W)];
+    MaskedImages = MaskImages(Images,N,M,lvl);
+    detected=[ detected; AutoTest(MaskedImages,Images,W,N,M)];
   endfor
 endfunction
 
@@ -113,20 +113,48 @@ function SpuriousImages=GenerateOddSpurious(Images)
   SpuriousImages=(SpuriousImages>0)*2-1;
 endfunction
 
-function detected=TestSpurious(Images,W)
+function detected=TestSpurious(Images,W,N,M)
   SpuriousImages=GenerateOddSpurious(Images);
-  detected=AutoTest(SpuriousImages,SpuriousImages,W);
+  detected=AutoTest(SpuriousImages,SpuriousImages,W,N,M);
 endfunction
 
+function Images=LoadImagesWithPadding(ImageFileNames,N,M)
+  %Carga de las Imagenes  
+  Images=[];
+  for idx = 1:numel(ImageFileNames)
+    PaddedImage=rand(N,M)>0.5;
+    Image=imread(ImageFileNames{idx});
+    PaddedImage(1:size(Image)(1),1:size(Image)(2)) = Image;
+    Images=[Images; reshape(PaddedImage*2-1,1,[])];
+  endfor
+endfunction
 
-ImageFileNames=ImageNames45x60;
-Images=LoadImages(ImageFileNames);
+%ImageFileNames=ImageNames45x60;
+
+ImageFileNames= [ImageNames45x60  ; ImageNames50x50 ];
+N=50;
+M=60;
+
+%Images=LoadImages(ImageFileNames);
+Images=LoadImagesWithPadding(ImageFileNames,N,M);
 W=CalculateWeights(Images);  
-%Learned=AutoTest(Images,Images,W)
-%DetectedNoise=TestNoise(Images,W)
-%DetectedMasked=TestMasked(Images,W)
-DetectedNegativeSpurious=TestSpurious(Images,W)
+Learned=AutoTest(Images,Images,W,N,M)
+%DetectedNoise=TestNoise(Images,W,N,M)
+%DetectedMasked=TestMasked(Images,W,N,M)
+%DetectedNegativeSpurious=TestSpurious(Images,W,N,M)
 
 %Learned45x60=testHopfield(ImageNames45x60)
 %Learned50x50=testHopfield(ImageNames50x50)
 
+%pmax_Ns = [ 0.105 0.138 0.185 0.37 0.61]
+%Ns=[4 5 6 7 8 9 10]
+
+%for pmax_N = pmax_Ns
+%  for N = Ns
+%    Images=(rand(floor(pmax_N*N^2),N^2) > 0.5 ) * 2 - 1;
+%    W=CalculateWeights(Images);
+%    Learned=AutoTest(Images,Images,W,N,N);
+%    Prob=sum(Learned)/numel(Learned);
+%    display([N*N,numel(Learned),Prob, 1-Prob]);
+%  endfor
+%endfor
