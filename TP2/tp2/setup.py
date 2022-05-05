@@ -19,9 +19,9 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 
 setup(
-    name='pmutester',
+    name='tp2',
     version='0',
-    url='https://bitbucket.org/skirhir/pmutester/src',
+    url='https://github.com/xvan/RedesNeuronales',
     license='MIT',
     author='Juan Antonio Zuloaga Mellino',
     author_email='skirhir@gmail.com',
