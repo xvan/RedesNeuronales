@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Callable, Tuple, List
-
+import matplotlib.pyplot as plt
 
 TrainDataType = List[Tuple[np.ndarray, np.ndarray]]
 
@@ -30,7 +30,7 @@ class Perceptron:
     def _append_bias(self, xi: np.ndarray) -> np.ndarray:
         return np.append(-1, xi)
 
-    def train(self, data: TrainDataType):
+    def train(self, data: TrainDataType, learning_rate: float = 0.01, iterations_limit: int = 1000):
         first_xi = data[0][0]
         self.weights = self._append_bias(np.ones(np.shape(first_xi))).transpose()
 
@@ -51,9 +51,7 @@ class ThresholdUnit(Perceptron):
         self.train_data: TrainDataType = None
         self.activator = self.sgn
 
-    ITERATIONS_LIMIT = 1000
-
-    def train(self, data: TrainDataType):
+    def train(self, data: TrainDataType, learning_rate: float = 0.01, iterations_limit: int = 1000):
         self.train_data = data
         self._generate_weights(data)
 
@@ -61,9 +59,7 @@ class ThresholdUnit(Perceptron):
 
         clear = 0
 
-        learning_rate = 0.01
-
-        for _ in range(self.ITERATIONS_LIMIT):
+        for _ in range(iterations_limit):
             for xb, err in ((xb, self._process_biased(xb) - y) for xb, y in curated_data):
                 if np.any(err != 0):
                     self.weights -= learning_rate * np.dot(xb.transpose(), err)

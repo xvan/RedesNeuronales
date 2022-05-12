@@ -1,9 +1,15 @@
+import itertools
 import unittest
 import numpy as np
 import numpy.testing as npt
+import io
+import pickle
+import base64
 
 from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType
+from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
 from typing import Callable, Tuple, List
+
 
 class TestPerceptron(unittest.TestCase):
     def activator(self, xi):
@@ -69,6 +75,7 @@ class TestPerceptron(unittest.TestCase):
         perceptron = Perceptron()
         perceptron.train(self.and_gate_table)
 
+
 class TestThresholdUnits(unittest.TestCase):
     def test_activator(self):
         npt.assert_array_equal(np.array([1, 1, -1]), ThresholdUnit().activate(np.array([4, 0, -5])))
@@ -123,6 +130,141 @@ class TestThresholdUnits(unittest.TestCase):
             with self.assertRaises(TypeError):
                 print(bad_input)
                 Perceptron().process(bad_input)
+
+    pickleData="""
+        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"""
+
+    def decode_base64_picke(self, base64_str: str):
+        with io.BytesIO(base64.b64decode(self.pickleData)) as fi:
+            return pickle.load(fi)
+
+    def test_train_and_process_difficult_pairs(self):
+        error_samples = self.decode_base64_picke(self.pickleData)
+        print(error_samples)
+        for sample in error_samples:
+            tu = ThresholdUnit()
+            tu.train(sample, iterations_limit=10000)
+
+class TestCapacityEstimator(unittest.TestCase):
+
+    def setUp(self):
+        self.ce = CapacityEstimator(ThresholdUnit())
+
+    def test_capacity_by_bruteforce(self):
+        self.assertEqual(1, self.ce.brute_capacity(1, 1))
+        self.assertEqual(1, self.ce.brute_capacity(1, 2))
+        self.assertEqual(1, self.ce.brute_capacity(2, 1))
+        self.assertEqual(1, self.ce.brute_capacity(2, 2))
+        self.assertEqual(1, self.ce.brute_capacity(2, 3))
+        self.assertEqual(7 / 8, self.ce.brute_capacity(2, 4))
+        # self.assertEqual(1, self.ce.capacity(3, 1))
+        # self.assertEqual(1, self.ce.capacity(3, 2))
+        # self.assertEqual(1, self.ce.capacity(3, 3))
+        # self.assertEqual(137/140, self.ce.capacity(3, 4))
+        # self.assertEqual(99/112, self.ce.capacity(3, 5))
+        # self.assertEqual(41/56, self.ce.capacity(3, 6))
+        # self.assertEqual(9/16, self.ce.capacity(3, 7))
+        # self.assertEqual(13/32, self.ce.capacity(3, 8))
+
+    def test_generate_data(self):
+        ce = CapacityEstimator(ThresholdUnit())
+        self.validate_generated_data(entries=3, patterns=2)
+        self.validate_generated_data(entries=4, patterns=5)
+        self.validate_generated_data(entries=8, patterns=128)
+
+    def validate_generated_data(self, entries, patterns):
+        data = self.ce.generate_data(entries, patterns)
+        self.assertEqual(patterns, len(data))
+        for x, y in data:
+            self.assertEqual(entries, len(x))
+            self.assertTrue(y in [1, -1])
+
+    def test_capacity_by_montecarlo(self):
+        self.assertAlmostEqual(1, self.ce.capacity(1, 1, 1000), delta=0.02)
+        self.assertAlmostEqual(1, self.ce.capacity(1, 2, 1000), delta=0.02)
+        self.assertAlmostEqual(self.theoric_estimation(3), self.ce.capacity(1, 3, 1000), delta=0.02)
+        self.assertAlmostEqual(self.theoric_estimation(4), self.ce.capacity(1, 4, 1000), delta=0.02)
+
+    def test_theoric_capacity(self):
+        self.assertAlmostEqual(1, self.theoric_estimation(1))
+        self.assertAlmostEqual(1, self.theoric_estimation(2))
+        self.assertAlmostEqual(6/8, self.theoric_estimation(3))
+
+    def theoric_estimation(self, dim_x: int):
+        return np.sum([1 for x in itertools.product([1, -1], repeat=dim_x) if self.sign_changes(x) <= 1]) / 2**dim_x
+
+    def test_sign_changes(self):
+        self.assertEqual(0, self.sign_changes([1, 1]))
+        self.assertEqual(1, self.sign_changes([-1, 1]))
+        self.assertEqual(1, self.sign_changes([-1, -1, 1]))
+        self.assertEqual(2, self.sign_changes([-1, 1, -1]))
+        self.assertEqual(2, self.sign_changes([1, -1, -1, 1]))
+        self.assertEqual(3, self.sign_changes([1, -1, 1, -1]))
+
+    @staticmethod
+    def sign_changes(x):
+        old_x = x[0]
+        count = 0
+        for xi in x:
+            if xi != old_x:
+                count += 1
+            old_x = xi
+        return count
+
+class TestIncrementalEstimator(unittest.TestCase):
+    def test_starts_with_nan(self):
+        ie = IncrementalEstimator()
+        self.assertTrue(np.isnan(ie.mean))
+        self.assertTrue(np.isnan(ie.variance))
+        self.assertEqual(0,ie.count)
+
+    def test_mean_of_one(self):
+        ie = IncrementalEstimator()
+        ie.append(1)
+        self.assertAlmostEqual(1, ie.mean)
+        self.assertTrue(np.isnan(ie.variance))
+
+    def test_mean(self):
+        self.validate_estimators([1, 1])
+        self.validate_estimators([1, 2])
+        self.validate_estimators(np.random.rand(100))
+
+    def validate_estimators(self, data):
+        ie = IncrementalEstimator()
+        ie.append_range(data)
+        self.assertAlmostEqual(np.mean(data), ie.mean)
+        self.assertAlmostEqual(np.var(data, ddof=1), ie.variance),
+
+    def test_std(self):
+        ie = IncrementalEstimator()
+        self.assertTrue(np.isnan(ie.std))
+        data = np.random.rand(100)
+        ie.append_range(data)
+        self.assertAlmostEqual(np.std(data, ddof=1), ie.std)
 
 if __name__ == '__main__':
     unittest.main()
