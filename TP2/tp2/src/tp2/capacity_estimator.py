@@ -43,11 +43,10 @@ class CapacityEstimator:
                 except TooManyIterations:
                     ie.append(0)
 
-            print("d:%i, p:%i, n:%i, u: %.03f, disc: %0.3f" % (dimension, patterns, ie.count, ie.mean, ie.disc(1.96)))
             if ie.disc(1.96) < 0.01:
-                print()
                 break
 
+        print("d:%i, p:%i, n:%i, u: %.03f, disc: %0.3f" % (dimension, patterns, ie.count, ie.mean, ie.disc(1.96)))
         return ie.mean
 
 

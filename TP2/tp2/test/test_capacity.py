@@ -7,7 +7,7 @@ from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
 
 class TestCapacity(unittest.TestCase):
-    def test_generate_estimates(self):
+    def generate_estimates(self):
         results = []
         for dim in list(range(1, 11)):
             pmax = 1
@@ -22,7 +22,6 @@ class TestCapacity(unittest.TestCase):
         results_df.to_csv("~/results.csv")
         with open("/home/xvan/results.pkl", "wb") as fo:
             pickle.dump(results_df, fo)
-
 
 if __name__ == '__main__':
     unittest.main()
