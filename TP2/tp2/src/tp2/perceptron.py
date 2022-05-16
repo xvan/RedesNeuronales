@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Callable, Tuple, List
+from dvg_ringbuffer import RingBuffer
 
 TrainDataType = List[Tuple[np.ndarray, np.ndarray]]
 
@@ -59,23 +60,50 @@ class LinearUnit(Perceptron):
     def biased_cost(self, biased_data: TrainDataType):
         return np.sum([(y - self._process_biased(x)) ** 2 for x, y in biased_data])
 
-    def train(self, data: TrainDataType, learning_rate: float = 1, iterations_limit: int = 100000):
+    def train(self, data: TrainDataType, learning_rate: float = 0.1, iterations_limit: int = 100000):
         self.train_data = data
         self._generate_weights(data)
         biased_data = self.apply_bias(data)
 
-        for _ in range(iterations_limit):
-            cost = self.biased_cost(biased_data)
-            print(cost, self.weights.transpose())
+        last_costs = RingBuffer(10)
+        long_costs = RingBuffer(10)
 
-            if cost < 0.01:
+        for _ in range(10):
+            last_costs.append(np.inf)
+            long_costs.append(np.inf)
+
+        best_weights = self.weights
+        best_cost = np.inf
+
+        failed_attempts = 0
+        while failed_attempts < 10:
+            self.weights = np.random.rand(np.size(self.weights)) * 2 - 1
+            for _ in range(iterations_limit):
+                cost_gradient = np.sum([self.cost_gradient(xb, y) for xb, y in biased_data])
+                self.weights += learning_rate * cost_gradient
+
+                cost = self.biased_cost(biased_data)
+                last_costs.append(cost)
+                mean_cost = np.mean(last_costs)
+                long_costs.append(mean_cost)
+                if 0.99 * long_costs[0] < mean_cost:
+                    print("Final Cost: %i" % cost)
+                    break
+
+            if cost == 0:
                 return
 
-            cost_gradient = np.sum([self.cost_gradient(xb, y) for xb, y in biased_data])
-            self.weights += learning_rate * cost_gradient
+            if cost > best_cost:
+                failed_attempts += 1
+            else:
+                failed_attempts = 0
+                best_weights = self.weights
+                best_cost = cost
+
+        self.weights = best_weights
+        print("Best Cost: %i" % best_cost)
 
 
-        raise TooManyIterations()
 
     def cost_gradient(self, x_biased, y):
         wx = self._weight_product(x_biased)

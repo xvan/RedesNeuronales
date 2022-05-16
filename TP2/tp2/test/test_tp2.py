@@ -120,7 +120,7 @@ class TestLinearUnit(unittest.TestCase):
         pass
 
     def test_train_and_process(self):
-        self.train_and_process(and_gate_table)
+        #self.train_and_process(and_gate_table)
         #self.train_and_process(and_or_gate_table)
         self.train_and_process(sign_of_sum)
 
@@ -128,7 +128,7 @@ class TestLinearUnit(unittest.TestCase):
         gu = LinearUnit()
         gu.train(data)
         for (x, y) in data:
-            npt.assert_array_almost_equal(y, gu.process(x), decimal=1)
+            npt.assert_array_equal(np.sign(y), np.sign(gu.process(x)))
 
 class TestThresholdUnits(unittest.TestCase):
     def test_activator(self):
