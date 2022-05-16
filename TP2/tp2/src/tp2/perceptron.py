@@ -47,7 +47,7 @@ class Perceptron:
         return [(self._append_bias(x).reshape((1, -1)), y) for x, y in data]
 
 
-class LinearUnit(Perceptron):
+class NonLinearUnit(Perceptron):
     def __init__(self):
         super().__init__()
         self.train_data: TrainDataType = None
@@ -77,9 +77,9 @@ class LinearUnit(Perceptron):
 
         failed_attempts = 0
         while failed_attempts < 10:
-            self.weights = np.random.rand(np.size(self.weights)) * 2 - 1
+            self.weights = np.random.rand(* np.shape(self.weights)) * 2 - 1
             for _ in range(iterations_limit):
-                cost_gradient = np.sum([self.cost_gradient(xb, y) for xb, y in biased_data])
+                cost_gradient = np.sum([self.cost_gradient(xb, y) for xb, y in biased_data], axis=0)
                 self.weights += learning_rate * cost_gradient
 
                 cost = self.biased_cost(biased_data)
@@ -87,7 +87,7 @@ class LinearUnit(Perceptron):
                 mean_cost = np.mean(last_costs)
                 long_costs.append(mean_cost)
                 if 0.99 * long_costs[0] < mean_cost:
-                    print("Final Cost: %i" % cost)
+                    # print("Final Cost: %i" % cost)
                     break
 
             if cost == 0:
@@ -107,7 +107,7 @@ class LinearUnit(Perceptron):
 
     def cost_gradient(self, x_biased, y):
         wx = self._weight_product(x_biased)
-        return ((y - self.activator(wx)) * self.activatorDiff(wx)) * x_biased
+        return ((y - self.activator(wx)) * self.activatorDiff(wx)) * x_biased.transpose()
 
 
 class ThresholdUnit(Perceptron):

@@ -6,7 +6,7 @@ import io
 import pickle
 import base64
 
-from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, LinearUnit
+from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, NonLinearUnit
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
 from typing import Callable, Tuple, List
 
@@ -29,6 +29,25 @@ sign_of_sum: TrainDataType = [
     ([1, 1, 1], [1]),
     ([1, 0, -1], [1]),
     ([1, -1, -1], [-1]),
+]
+
+large_and_or_gate_table: TrainDataType = [
+    ([ 1,  1,  1,  1], [ 1,  1]),
+    ([ 1,  1,  1, -1], [-1,  1]),
+    ([ 1,  1, -1,  1], [-1,  1]),
+    ([ 1,  1, -1, -1], [-1,  1]),
+    ([ 1, -1,  1,  1], [-1,  1]),
+    ([ 1, -1,  1, -1], [-1,  1]),
+    ([ 1, -1, -1,  1], [-1,  1]),
+    ([ 1, -1, -1, -1], [-1,  1]),
+    ([-1,  1,  1,  1], [-1,  1]),
+    ([-1,  1,  1, -1], [-1,  1]),
+    ([-1,  1, -1,  1], [-1,  1]),
+    ([-1,  1, -1, -1], [-1,  1]),
+    ([-1, -1,  1,  1], [-1,  1]),
+    ([-1, -1,  1, -1], [-1,  1]),
+    ([-1, -1, -1,  1], [-1,  1]),
+    ([-1, -1, -1, -1], [-1, -1]),
 ]
 
 xor_gate_table: TrainDataType = [
@@ -102,9 +121,9 @@ class TestPerceptron(unittest.TestCase):
         perceptron = Perceptron()
         perceptron.train(self.and_gate_table)
 
-class TestLinearUnit(unittest.TestCase):
+class TestNonLinearUnit(unittest.TestCase):
     def test_process_with_pretrained_weights(self):
-        lu = LinearUnit()
+        lu = NonLinearUnit()
         lu.weights = [[150], [100], [100]]
         for (x, y) in and_gate_table:
             npt.assert_array_equal(y, lu.process(x))
@@ -114,18 +133,19 @@ class TestLinearUnit(unittest.TestCase):
         self.calculate_cost([150, 100, 100], and_gate_table)
 
     def calculate_cost(self, weights: np.ndarray, data: TrainDataType):
-        lu = LinearUnit()
+        lu = NonLinearUnit()
         lu.weights = weights
         self.assertGreater(0.001, lu.cost(data))
         pass
 
     def test_train_and_process(self):
-        #self.train_and_process(and_gate_table)
-        #self.train_and_process(and_or_gate_table)
+        self.train_and_process(and_gate_table)
+        self.train_and_process(and_or_gate_table)
+        self.train_and_process(large_and_or_gate_table)
         self.train_and_process(sign_of_sum)
 
     def train_and_process(self, data: TrainDataType):
-        gu = LinearUnit()
+        gu = NonLinearUnit()
         gu.train(data)
         for (x, y) in data:
             npt.assert_array_equal(np.sign(y), np.sign(gu.process(x)))
