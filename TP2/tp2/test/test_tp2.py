@@ -332,7 +332,7 @@ class TestMultiLayerNetwork(unittest.TestCase):
 
         mn.train(xor_gate_table)
         for (x, y) in xor_gate_table:
-            npt.assert_array_equal(y, mn.process(x))
+            npt.assert_array_equal(y, np.sign(mn.process(x)))
 
 
 
