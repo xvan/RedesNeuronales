@@ -121,6 +121,9 @@ class NonLinearUnit(Perceptron):
         wx = self._weight_product(x_biased)
         return ((y - self.activator(wx)) * self.activatorDiff(wx)) * x_biased.transpose()
 
+    def sample_cost(self, y: np.ndarray) -> np.ndarray:
+        return (y - self.v) ** 2
+
     def first_delta(self, y: np.ndarray) -> np.ndarray:
         return self.hidden_delta(y - self.v)
 
@@ -132,7 +135,7 @@ class NonLinearUnit(Perceptron):
         return np.dot(self.delta, self.weights[1:, :].transpose()) #slice bias
 
     def update_weights(self, learning_rate: float):
-        self.weights += learning_rate * self.x.reshape(-1,1).dot(self.delta.reshape(1, -1))
+        self.weights += learning_rate * self.x.reshape(-1, 1).dot(self.delta.reshape(1, -1))
 
 class ThresholdUnit(Perceptron):
 
