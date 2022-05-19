@@ -27,13 +27,18 @@ class MultilayerNetwork:
             last_costs.append(np.inf)
             long_costs.append(np.inf)
 
-        for _ in range(1000):
+        for perceptron in self.perceptrons:
+            perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
+
+        for _ in range(1000000):
             np.random.shuffle(data)
+            cost = 0
             for xo, y in data:
 
                 #Set States
                 self.process(xo)
 
+                cost += self.perceptrons[-1].sample_cost(y)
                 #BackPropagate Deltas
 
                 self.perceptrons[-1].first_delta(y)
@@ -47,8 +52,9 @@ class MultilayerNetwork:
                 for perceptron in self.perceptrons:
                     perceptron.update_weights(learning_rate)
 
-
-
+            print(cost)
+            if cost < 0.01:
+                pass
                 # self.perceptrons[-2].weights += np.reshape(
                 #    learning_rate * cost_delta * self.perceptrons[-2].x.transpose(), self.perceptrons[-2].weights.shape)
 
