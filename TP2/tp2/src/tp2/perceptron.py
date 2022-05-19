@@ -14,15 +14,20 @@ class Perceptron:
 
     def __init__(self):
         self.activator: Callable[[np.ndarray], np.ndarray] = None
+        self.x: np.ndarray = None
+        self.h: np.ndarray = None
+        self.v: np.ndarray = None
         self.weights: np.ndarray = None
 
+
     def process(self, xi: np.ndarray):
-        xi_biased = self._append_bias(xi)
-        return self._process_biased(xi_biased)
+        self.x = self._append_bias(xi)
+        return self._process_biased(self.x)
 
     def _process_biased(self, xi_biased: np.ndarray):
-        h = self._weight_product(xi_biased)
-        return self.activate(h)
+        self.h = self._weight_product(xi_biased)
+        self.v = self.activate(self.h)
+        return self.v
 
     def _weight_product(self, xi_biased: np.ndarray):
         return np.dot(xi_biased, self.weights)
@@ -40,22 +45,31 @@ class Perceptron:
     def _generate_weights(self, data: np.ndarray):
         first_xi = data[0][0]
         first_hi = data[0][1]
-        self.weights = np.ones((np.size(self._append_bias(first_xi)), np.size(first_hi)))
+        self._generate_weights_from_dim(np.size(first_xi), np.size(first_hi))
+
+    def _generate_weights_from_dim(self, inDim: int, outDim: int):
+        self.weights = np.ones((inDim+1, outDim))
         self.weights[0] = 0
 
-    def apply_bias(self, data):
-        return [(self._append_bias(x).reshape((1, -1)), y) for x, y in data]
+    def apply_bias(self, xi: np.ndarray) -> np.ndarray:
+        return self._append_bias(xi).reshape((1, -1))
+
+    def apply_bias_to_data(self, data):
+        return [(self.apply_bias(x), y) for x, y in data]
 
 
 class NonLinearUnit(Perceptron):
-    def __init__(self):
+    def __init__(self, inDim: int = 1 , outDim: int = 1):
         super().__init__()
         self.train_data: TrainDataType = None
         self.activator = np.tanh
         self.activatorDiff = lambda x: 1 - np.tanh(x) ** 2
+        self._generate_weights_from_dim(inDim, outDim)
+
+        self.delta: np.ndarray = None
 
     def cost(self, data: TrainDataType):
-        return self.biased_cost(self.apply_bias(data))
+        return self.biased_cost(self.apply_bias_to_data(data))
 
     def biased_cost(self, biased_data: TrainDataType):
         return np.sum([(y - self._process_biased(x)) ** 2 for x, y in biased_data])
@@ -63,7 +77,7 @@ class NonLinearUnit(Perceptron):
     def train(self, data: TrainDataType, learning_rate: float = 0.1, iterations_limit: int = 100000):
         self.train_data = data
         self._generate_weights(data)
-        biased_data = self.apply_bias(data)
+        biased_data = self.apply_bias_to_data(data)
 
         last_costs = RingBuffer(10)
         long_costs = RingBuffer(10)
@@ -103,12 +117,22 @@ class NonLinearUnit(Perceptron):
         self.weights = best_weights
         print("Best Cost: %i" % best_cost)
 
-
-
     def cost_gradient(self, x_biased, y):
         wx = self._weight_product(x_biased)
         return ((y - self.activator(wx)) * self.activatorDiff(wx)) * x_biased.transpose()
 
+    def first_delta(self, y: np.ndarray) -> np.ndarray:
+        return self.hidden_delta(y - self.v)
+
+    def hidden_delta(self, propagated_delta: np.ndarray) -> np.ndarray:
+        self.delta = propagated_delta * self.activatorDiff(self.h)
+        return self.delta
+
+    def back_propagate_delta(self):
+        return np.dot(self.delta, self.weights[1:, :].transpose()) #slice bias
+
+    def update_weights(self, learning_rate: float):
+        self.weights += learning_rate * self.x.reshape(-1,1).dot(self.delta.reshape(1, -1))
 
 class ThresholdUnit(Perceptron):
 
@@ -125,7 +149,7 @@ class ThresholdUnit(Perceptron):
         self.train_data = data
         self._generate_weights(data)
 
-        curated_data = self.apply_bias(data)
+        curated_data = self.apply_bias_to_data(data)
 
         clear = 0
 
