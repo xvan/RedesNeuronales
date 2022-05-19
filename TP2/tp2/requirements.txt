@@ -1,5 +1,7 @@
-numpy==1.22.2
-plotly==5.5.0
-six==1.16.0
-tenacity==8.0.1
+numpy
+plotly
+six
+tenacity
 setuptools~=57.0.0
+dvg-ringbuffer
+pandas
