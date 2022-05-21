@@ -19,39 +19,62 @@ class MultilayerNetwork:
             i += 1
         return self.state[-1]
 
-    def train(self, data: TrainDataType, learning_rate: float = 0.01):
-        last_costs = RingBuffer(10)
-        long_costs = RingBuffer(10)
+    def train(self, data: TrainDataType):
+        trainer = MultilayerTrainer(data)
+        trainer.train(self)
 
-        for _ in range(10):
-            last_costs.append(np.inf)
-            long_costs.append(np.inf)
 
-        for perceptron in self.perceptrons:
+class MultilayerTrainer:
+
+    def __init__(self, data: TrainDataType):
+        self.learning_rate: float = 0.01
+        self.iterations_limit: float = 100000
+        self.data: TrainDataType = data
+        self._init_exit_buffer()
+
+    def _init_exit_buffer(self):
+        buffer_size = 10
+        self.last_costs = RingBuffer(buffer_size)
+        self.long_costs = RingBuffer(buffer_size)
+
+        for _ in range(buffer_size):
+            self.last_costs.append(np.inf)
+            self.long_costs.append(np.inf)
+
+    def train(self, network: MultilayerNetwork):
+
+        for perceptron in network.perceptrons:
             perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
 
-        for _ in range(1000000):
-            np.random.shuffle(data)
-            cost = 0
-            for xo, y in data:
+        best_weights = None
+        best_cost = np.inf
 
-                #Set States
-                self.process(xo)
+        failed_attempts = 0
+        while failed_attempts < 10:
 
-                cost += self.perceptrons[-1].sample_cost(y)
-                #BackPropagate Deltas
+            for _ in range(self.iterations_limit):
+                np.random.shuffle(self.data)
+                cost = 0
+                for xo, y in self.data:
 
-                self.perceptrons[-1].first_delta(y)
+                    # Set States
+                    network.process(xo)
 
-                for idx in list(range(len(self.perceptrons))[-2::-1]):
-                    propagated_delta = self.perceptrons[idx+1].back_propagate_delta()
-                    self.perceptrons[idx].hidden_delta(propagated_delta)
+                    cost += network.perceptrons[-1].sample_cost(y)
+                    # BackPropagate Deltas
 
-                #update weights:
+                    network.perceptrons[-1].first_delta(y)
 
-                for perceptron in self.perceptrons:
-                    perceptron.update_weights(learning_rate)
+                    for idx in list(range(len(network.perceptrons))[-2::-1]):
+                        propagated_delta = network.perceptrons[idx + 1].back_propagate_delta()
+                        network.perceptrons[idx].hidden_delta(propagated_delta)
 
+                    # update weights:
+
+                    for perceptron in network.perceptrons:
+                        perceptron.update_weights(self.learning_rate)
+
+                    failed_attempts = 100
             print(cost)
             if cost < 0.01:
                 pass

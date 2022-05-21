@@ -334,7 +334,5 @@ class TestMultiLayerNetwork(unittest.TestCase):
         for (x, y) in xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
-
-
 if __name__ == '__main__':
     unittest.main()
