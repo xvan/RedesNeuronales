@@ -74,11 +74,21 @@ class MultilayerTrainer:
                     for perceptron in network.perceptrons:
                         perceptron.update_weights(self.learning_rate)
 
-                    failed_attempts = 100
-            print(cost)
-            if cost < 0.01:
-                pass
-                # self.perceptrons[-2].weights += np.reshape(
-                #    learning_rate * cost_delta * self.perceptrons[-2].x.transpose(), self.perceptrons[-2].weights.shape)
+                print(cost)
+                self.last_cost.append(cost)
+                mean_cost = np.mean(self.last_cost)
+                self.long_costs.append(mean_cost)
+                if 0.99 * self.long_costs[0] < mean_cost:
+                    # print("Final Cost: %i" % cost)
+                    break
 
+            # if cost > best_cost:
+            #     failed_attempts += 1
+            # else:
+            #     failed_attempts = 0
+            #     best_weights = np.copy(self.weights)
+            #     best_cost = cost
+
+            if cost <= 0.005:
+                break
 
