@@ -6,6 +6,8 @@ import io
 import pickle
 import base64
 
+from multiprocessing import Pool
+
 from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, NonLinearUnit
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
 from tp2.multilayer import MultilayerNetwork
@@ -57,6 +59,25 @@ xor_gate_table: TrainDataType = [
     ([1, -1], [1]),
     ([-1, 1], [1]),
     ([-1, -1], [-1])
+]
+
+large_xor_gate_table: TrainDataType = [
+    ([ 1,  1,  1,  1], [-1]),
+    ([ 1,  1,  1, -1], [-1]),
+    ([ 1,  1, -1,  1], [-1]),
+    ([ 1,  1, -1, -1], [-1]),
+    ([ 1, -1,  1,  1], [-1]),
+    ([ 1, -1,  1, -1], [-1]),
+    ([ 1, -1, -1,  1], [-1]),
+    ([ 1, -1, -1, -1], [ 1]),
+    ([-1,  1,  1,  1], [-1]),
+    ([-1,  1,  1, -1], [-1]),
+    ([-1,  1, -1,  1], [-1]),
+    ([-1,  1, -1, -1], [ 1]),
+    ([-1, -1,  1,  1], [-1]),
+    ([-1, -1,  1, -1], [ 1]),
+    ([-1, -1, -1,  1], [ 1]),
+    ([-1, -1, -1, -1], [-1]),
 ]
 
 class TestPerceptron(unittest.TestCase):
@@ -315,7 +336,6 @@ class TestIncrementalEstimator(unittest.TestCase):
         ie.append_range(data)
         self.assertAlmostEqual(np.std(data, ddof=1), ie.std)
 
-
 class TestMultiLayerNetwork(unittest.TestCase):
     def test_has_correct_output_size(self):
         layers = [4, 2, 2]
@@ -333,6 +353,32 @@ class TestMultiLayerNetwork(unittest.TestCase):
         mn.train(xor_gate_table)
         for (x, y) in xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
+
+    def test_train_and_process_large_xor(self):
+        layers = [4, 2, 1]
+        mn = MultilayerNetwork(layers)
+
+        mn.train(large_xor_gate_table)
+        for (x, y) in large_xor_gate_table:
+            npt.assert_array_equal(y, np.sign(mn.process(x)))
+
+    @staticmethod
+    def xor_task(_):
+            layers = [2, 2, 1]
+            mn = MultilayerNetwork(layers)
+            mn.train(xor_gate_table)
+            return np.all([y == np.sign(mn.process(x)) for (x, y) in xor_gate_table])
+
+    @unittest.skip("Too Slow")
+    def test_streess_xor(self):
+        iterations = 1000
+
+        with Pool(processes=6) as pool:  # run no more than 6 at a time
+            TT = pool.map(self.xor_task, range(iterations))
+            successes = np.sum(TT)
+            self.assertEqual(iterations, successes)
+
+
 
 if __name__ == '__main__':
     unittest.main()

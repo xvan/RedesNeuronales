@@ -30,7 +30,6 @@ class MultilayerTrainer:
         self.learning_rate: float = 0.01
         self.iterations_limit: float = 100000
         self.data: TrainDataType = data
-        self._init_exit_buffer()
 
     def _init_exit_buffer(self):
         buffer_size = 10
@@ -43,14 +42,16 @@ class MultilayerTrainer:
 
     def train(self, network: MultilayerNetwork):
 
-        for perceptron in network.perceptrons:
-            perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
-
         best_weights = None
         best_cost = np.inf
 
         failed_attempts = 0
         while failed_attempts < 10:
+
+            for perceptron in network.perceptrons:
+                perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
+
+            self._init_exit_buffer()
 
             for _ in range(self.iterations_limit):
                 np.random.shuffle(self.data)
@@ -74,21 +75,23 @@ class MultilayerTrainer:
                     for perceptron in network.perceptrons:
                         perceptron.update_weights(self.learning_rate)
 
-                print(cost)
-                self.last_cost.append(cost)
-                mean_cost = np.mean(self.last_cost)
+                #print(cost)
+                self.last_costs.append(cost)
+                mean_cost = np.mean(self.last_costs)
                 self.long_costs.append(mean_cost)
-                if 0.99 * self.long_costs[0] < mean_cost:
-                    # print("Final Cost: %i" % cost)
+                if 0.999 * self.long_costs[0] < mean_cost:
                     break
 
-            # if cost > best_cost:
-            #     failed_attempts += 1
-            # else:
-            #     failed_attempts = 0
-            #     best_weights = np.copy(self.weights)
-            #     best_cost = cost
+            if cost > best_cost:
+                failed_attempts += 1
+            else:
+                failed_attempts = 0
+                best_weights = [np.copy(p.weights) for p in network.perceptrons]
+                best_cost = cost
 
             if cost <= 0.005:
-                break
+                return
+
+        for w, p in zip(best_weights, network.perceptrons):
+            p.weights = w
 
