@@ -55,5 +55,6 @@ def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
         plt.colorbar()
         plt.xlabel("weight_coord:" + str(weight_coord_x))
         plt.ylabel("weight_coord:" + str(weight_coord_y))
+        trainer.best_weights = copy.deepcopy(W)
         trainer._restore_best_weights()
 
