@@ -355,7 +355,7 @@ class TestMultiLayerNetwork(unittest.TestCase):
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
     def test_train_and_process_large_xor(self):
-        layers = [4, 2, 1]
+        layers = [4, 5, 1]
         mn = MultilayerNetwork(layers)
 
         mn.train(large_xor_gate_table)
@@ -377,8 +377,6 @@ class TestMultiLayerNetwork(unittest.TestCase):
             TT = pool.map(self.xor_task, range(iterations))
             successes = np.sum(TT)
             self.assertEqual(iterations, successes)
-
-
 
 if __name__ == '__main__':
     unittest.main()

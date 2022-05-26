@@ -1,7 +1,10 @@
 import numpy as np
+import itertools
+import copy
 import pandas as pd
 import matplotlib.pyplot as plt
-from tp2.perceptron import ThresholdUnit
+from tp2.perceptron import ThresholdUnit, TrainDataType
+from tp2.multilayer import MultilayerTrainer
 
 
 def train_data_to_df(data):
@@ -28,3 +31,29 @@ def plot_2d_tu(tu: ThresholdUnit):
     plt.ylim([-1.2, 1.2])
     plt.xlabel("x1")
     plt.ylabel("x2")
+
+
+def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
+    W = copy.deepcopy(trainer.best_weights)
+    weigth_coords = [(x, y) for x in range(len(W)) for y in np.ndindex(W[x].shape)]
+
+    max_weight = np.ceil(np.max(np.abs([y for x in W for y in x.reshape(-1)])))
+
+    mesh_size = 101
+    space = np.linspace(-max_weight, max_weight, mesh_size)
+
+    for weight_coord_x, weight_coord_y in itertools.combinations(weigth_coords, 2):
+        plt.figure()
+        zz = np.zeros((mesh_size, mesh_size))
+        for xi, x in enumerate(space):
+            for yi, y in enumerate(space):
+                trainer.network.perceptrons[weight_coord_x[0]].weights[weight_coord_y[1]] = x
+                trainer.network.perceptrons[weight_coord_y[0]].weights[weight_coord_y[1]] = y
+                zz[(xi, yi)] = np.sum([trainer._set_network_states(x, y) for x, y in data])
+
+        plt.contourf(space, space, zz)
+        plt.colorbar()
+        plt.xlabel("weight_coord:" + str(weight_coord_x))
+        plt.ylabel("weight_coord:" + str(weight_coord_y))
+        trainer._restore_best_weights()
+

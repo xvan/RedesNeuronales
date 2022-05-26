@@ -1,6 +1,8 @@
 import unittest
 from tp2.perceptron import ThresholdUnit, TrainDataType
+from tp2.multilayer import MultilayerTrainer, MultilayerNetwork
 import tp2.aux as tp2Aux
+import numpy as np
 
 
 class TestAuxFunctions(unittest.TestCase):
@@ -48,3 +50,18 @@ class TestAuxFunctions(unittest.TestCase):
 
     def test_plot_call(self):
         tp2Aux.plot_2d_tu(self.tu)
+
+    def test_plot_all_costs(self):
+        xor_gate_table = [
+            ([1, 1], [-1]),
+            ([1, -1], [1]),
+            ([-1, 1], [1]),
+            ([-1, -1], [-1])
+        ]
+
+        mn = MultilayerNetwork([2, 2, 1])
+        tr_mn = MultilayerTrainer(mn, xor_gate_table)
+        tr_mn.train()
+
+        tp2Aux.plot_all_cuts(tr_mn)
+

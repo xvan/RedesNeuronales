@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import itertools
 from typing import Callable, Tuple, List
 
@@ -24,11 +25,12 @@ class MultilayerNetwork:
 
 
 class MultilayerTrainer:
-    def __init__(self, network: MultilayerNetwork, data: TrainDataType):
+    def __init__(self, network: MultilayerNetwork, data: TrainDataType ):
         self.network = network
         self.learning_rate: float = 0.01
         self.iterations_limit: float = 100000
-        self.data: TrainDataType = data
+        self.data: TrainDataType = copy.deepcopy(data)
+        self.cost_callback: Callable[[float], None] = lambda c: None
 
     def _init_costs_log(self):
         buffer_size = 10
@@ -90,6 +92,7 @@ class MultilayerTrainer:
         self.last_costs.append(cost)
         mean_cost = np.mean(self.last_costs)
         self.long_costs.append(mean_cost)
+        self.cost_callback(cost)
 
     def _train_step(self):
         return np.sum([self._train_sample(xo, y) for xo, y in self.data])

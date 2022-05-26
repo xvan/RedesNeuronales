@@ -1,4 +1,6 @@
 numpy
+jupyter
+matplotlib
 plotly
 six
 tenacity
