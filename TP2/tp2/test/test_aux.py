@@ -59,9 +59,8 @@ class TestAuxFunctions(unittest.TestCase):
             ([-1, -1], [-1])
         ]
 
-        mn = MultilayerNetwork([2, 2, 1])
-        tr_mn = MultilayerTrainer(mn, xor_gate_table)
-        tr_mn.train()
-
-        tp2Aux.plot_all_cuts(tr_mn)
+        mn_xor2 = MultilayerNetwork([2, 2, 1])
+        trainer_xor2 = MultilayerTrainer(mn_xor2, xor_gate_table)
+        trainer_xor2.train()
+        tp2Aux.plot_all_cuts(trainer_xor2, xor_gate_table)
 

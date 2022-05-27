@@ -32,6 +32,12 @@ def plot_2d_tu(tu: ThresholdUnit):
     plt.xlabel("x1")
     plt.ylabel("x2")
 
+def plot_row_generator(columns):
+    while True:
+        f, subplots = plt.subplots(1, columns)
+        for subplot in subplots.ravel():
+            yield subplot
+
 
 def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
     W = copy.deepcopy(trainer.best_weights)
@@ -41,9 +47,9 @@ def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
 
     mesh_size = 101
     space = np.linspace(-max_weight, max_weight, mesh_size)
+    coord_combination = list(itertools.combinations(weigth_coords, 2))
 
-    for weight_coord_x, weight_coord_y in itertools.combinations(weigth_coords, 2):
-        plt.figure()
+    for (weight_coord_x, weight_coord_y), subplot in zip(coord_combination, plot_row_generator(3)):
         zz = np.zeros((mesh_size, mesh_size))
         for xi, x in enumerate(space):
             for yi, y in enumerate(space):
@@ -51,10 +57,46 @@ def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
                 trainer.network.perceptrons[weight_coord_y[0]].weights[weight_coord_y[1]] = y
                 zz[(xi, yi)] = np.sum([trainer._set_network_states(x, y) for x, y in data])
 
-        plt.contourf(space, space, zz)
-        plt.colorbar()
-        plt.xlabel("weight_coord:" + str(weight_coord_x))
-        plt.ylabel("weight_coord:" + str(weight_coord_y))
+        im = subplot.contourf(space, space, zz, cmap="PuRd", vmin=0, vmax=12)
+        #im = subplot.imshow(zz, cmap='PuRd', extent=[-max_weight, max_weight, -max_weight, max_weight], interpolation='bilinear', origin='lower')
+        subplot.set_xlabel("weight coord:" + str(weight_coord_x))
+        subplot.set_ylabel("weight coord:" + str(weight_coord_y))
+        subplot.set_aspect('equal')
+        plt.colorbar(im, ax=subplot, fraction=0.046, pad=0.04)
         trainer.best_weights = copy.deepcopy(W)
         trainer._restore_best_weights()
 
+
+def plot_all_cuts_per_sample(trainer: MultilayerTrainer, data: TrainDataType):
+    W = copy.deepcopy(trainer.best_weights)
+    weigth_coords = [(x, y) for x in range(len(W)) for y in np.ndindex(W[x].shape)]
+
+    max_weight = np.ceil(np.max(np.abs([y for x in W for y in x.reshape(-1)])))
+
+    mesh_size = 101
+    space = np.linspace(-max_weight, max_weight, mesh_size)
+    coord_combination = list(itertools.combinations(weigth_coords, 2))
+
+    for (weight_coord_x, weight_coord_y) in coord_combination:
+        figure, plotRows  = plt.subplots(1, len(data))
+        for (v, h), subplot in zip(data, plotRows.ravel()):
+            zz = np.zeros((mesh_size, mesh_size))
+            for xi, x in enumerate(space):
+                for yi, y in enumerate(space):
+                    trainer.network.perceptrons[weight_coord_x[0]].weights[weight_coord_y[1]] = x
+                    trainer.network.perceptrons[weight_coord_y[0]].weights[weight_coord_y[1]] = y
+                    zz[(xi, yi)] = trainer._set_network_states(v, h)
+
+            im = subplot.contourf(space, space, zz, cmap="PuRd", vmin=0, vmax=5)
+            #im = subplot.imshow(zz, cmap='PuRd', extent=[-max_weight, max_weight, -max_weight, max_weight], interpolation='bilinear', origin='lower')
+            subplot.set_xlabel("weight coord:" + str(weight_coord_x))
+            subplot.set_ylabel("weight coord:" + str(weight_coord_y))
+            subplot.set_title("input:" + str(v))
+            #subplot.set_aspect('equal')
+
+        plt.colorbar(im, ax=plotRows.ravel().tolist(),fraction=0.046, pad=0.04)
+        # divider = make_axes_locatable(ax1)
+        # cax1 = divider.append_axes("right", size="5%", pad=0.05)
+        # cbar = plt.colorbar(PC, cax=cax1)
+        trainer.best_weights = copy.deepcopy(W)
+        trainer._restore_best_weights()
