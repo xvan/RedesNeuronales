@@ -350,7 +350,15 @@ class TestMultiLayerNetwork(unittest.TestCase):
         layers = [2, 2, 1]
         mn = MultilayerNetwork(layers)
 
-        mn.train(xor_gate_table)
+        mn.train(xor_gate_table, 1)
+        for (x, y) in xor_gate_table:
+            npt.assert_array_equal(y, np.sign(mn.process(x)))
+
+    def test_train_and_process_xor_gradient(self):
+        layers = [2, 2, 1]
+        mn = MultilayerNetwork(layers)
+
+        mn.train(xor_gate_table, len(xor_gate_table))
         for (x, y) in xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
@@ -358,7 +366,14 @@ class TestMultiLayerNetwork(unittest.TestCase):
         layers = [4, 5, 1]
         mn = MultilayerNetwork(layers)
 
-        mn.train(large_xor_gate_table)
+        mn.train(large_xor_gate_table, 1)
+        for (x, y) in large_xor_gate_table:
+            npt.assert_array_equal(y, np.sign(mn.process(x)))
+
+    def test_train_and_process_large_xor_gradient(self):
+        layers = [4, 5, 1]
+        mn = MultilayerNetwork(layers)
+        mn.train(large_xor_gate_table, 2)
         for (x, y) in large_xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
@@ -366,7 +381,7 @@ class TestMultiLayerNetwork(unittest.TestCase):
     def xor_task(_):
             layers = [2, 2, 1]
             mn = MultilayerNetwork(layers)
-            mn.train(xor_gate_table)
+            mn.train(xor_gate_table, 1)
             return np.all([y == np.sign(mn.process(x)) for (x, y) in xor_gate_table])
 
     @unittest.skip("Too Slow")

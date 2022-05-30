@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import itertools
+import random
 from typing import Callable, Tuple, List
 
 from dvg_ringbuffer import RingBuffer
@@ -20,16 +21,17 @@ class MultilayerNetwork:
             i += 1
         return self.state[-1]
 
-    def train(self, data: TrainDataType):
-        MultilayerTrainer(self, data).train()
+    def train(self, data: TrainDataType, chunk_size=1):
+        MultilayerTrainer(self, data, chunk_size).train()
 
 
 class MultilayerTrainer:
-    def __init__(self, network: MultilayerNetwork, data: TrainDataType ):
+    def __init__(self, network: MultilayerNetwork, data: TrainDataType, chunk_size: int):
         self.network = network
         self.learning_rate: float = 0.01
         self.iterations_limit: float = 100000
         self.data: TrainDataType = copy.deepcopy(data)
+        self.chunk_size = chunk_size
         self.cost_callback: Callable[[float], None] = lambda c: None
 
     def _init_costs_log(self):
@@ -81,7 +83,6 @@ class MultilayerTrainer:
     def _train_attempt(self):
         self._init_attempt_states()
         for _ in range(self.iterations_limit):
-            np.random.shuffle(self.data)
             cost = self._train_step()
             self._update_costs_log(cost)
             if self._improvement_not_significant():
@@ -94,18 +95,45 @@ class MultilayerTrainer:
         self.long_costs.append(mean_cost)
         self.cost_callback(cost)
 
+    @property
+    def number_of_chunks(self) -> int:
+        return int(np.ceil(len(self.data) / self.chunk_size))
+
+    @property
+    def shuffled_data(self) -> TrainDataType:
+        return random.sample(self.data, len(self.data))
+
+    @property
+    def chunked_data(self) -> List[TrainDataType]:
+        return np.array_split(np.array(self.shuffled_data, dtype=object), self.number_of_chunks)
+
     def _train_step(self):
-        return np.sum([self._train_sample(xo, y) for xo, y in self.data])
+        chunks = self.chunked_data
+        return np.sum([self._train_chunk(chunk) for chunk in chunks])
+
+    def _train_chunk(self, chunk: TrainDataType) -> float:
+        sample_costs, sample_deltas = zip(* [self._train_sample(xo, y) for xo, y in chunk])
+        self._set_deltas(np.sum(sample_deltas, axis=0))
+        self._update_weights()
+        return np.sum(sample_costs)
 
     def _train_sample(self, xo, y):
         cost = self._set_network_states(xo, y)
         self._backpropagate_deltas(y)
-        self._update_weights()
-        return cost
+        #self._save_deltas()
+        #self._update_weights()
+        return cost, self._get_deltas()
+
+    def _set_deltas(self, deltas: List[List[float]]):
+        for perceptron, delta in zip(self.network.perceptrons, deltas):
+            perceptron.delta = delta
 
     def _update_weights(self):
         for perceptron in self.network.perceptrons:
             perceptron.update_weights(self.learning_rate)
+
+    def _get_deltas(self):
+        return [copy.deepcopy(perceptron.delta) for perceptron in self.network.perceptrons]
 
     def _backpropagate_deltas(self, y):
         self.network.perceptrons[-1].first_delta(y)
