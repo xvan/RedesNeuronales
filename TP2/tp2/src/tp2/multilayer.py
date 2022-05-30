@@ -8,16 +8,17 @@ from dvg_ringbuffer import RingBuffer
 
 from tp2.perceptron import NonLinearUnit, TrainDataType
 
+
 class MultilayerNetwork:
     def __init__(self, layers: List[int]):
-        self.perceptrons=[NonLinearUnit(inDim, outDim) for inDim, outDim in zip(layers[:-1], layers[1:])]
+        self.perceptrons = [NonLinearUnit(inDim, outDim) for inDim, outDim in zip(layers[:-1], layers[1:])]
         self.state = [[]] * len(layers)
 
     def process(self, xo: np.ndarray):
         i = 0
         self.state[i] = xo
         for perceptron in self.perceptrons:
-            self.state[i+1] = perceptron.process(self.state[i])
+            self.state[i + 1] = perceptron.process(self.state[i])
             i += 1
         return self.state[-1]
 
@@ -25,8 +26,15 @@ class MultilayerNetwork:
         MultilayerTrainer(self, data, chunk_size).train()
 
 
+class InvalidChunkSize(Exception):
+    pass
+
+
 class MultilayerTrainer:
     def __init__(self, network: MultilayerNetwork, data: TrainDataType, chunk_size: int):
+        if len(data) < chunk_size:
+            raise InvalidChunkSize()
+
         self.network = network
         self.learning_rate: float = 0.01
         self.iterations_limit: float = 100000
@@ -112,7 +120,7 @@ class MultilayerTrainer:
         return np.sum([self._train_chunk(chunk) for chunk in chunks])
 
     def _train_chunk(self, chunk: TrainDataType) -> float:
-        sample_costs, sample_deltas = zip(* [self._train_sample(xo, y) for xo, y in chunk])
+        sample_costs, sample_deltas = zip(*[self._train_sample(xo, y) for xo, y in chunk])
         self._set_deltas(np.sum(sample_deltas, axis=0))
         self._update_weights()
         return np.sum(sample_costs)
@@ -120,8 +128,8 @@ class MultilayerTrainer:
     def _train_sample(self, xo, y):
         cost = self._set_network_states(xo, y)
         self._backpropagate_deltas(y)
-        #self._save_deltas()
-        #self._update_weights()
+        # self._save_deltas()
+        # self._update_weights()
         return cost, self._get_deltas()
 
     def _set_deltas(self, deltas: List[List[float]]):
@@ -159,4 +167,3 @@ class MultilayerTrainer:
             self.failed_attempts = 0
             self.best_cost = self.last_cost
             self._save_best_weights()
-

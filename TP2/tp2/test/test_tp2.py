@@ -10,7 +10,7 @@ from multiprocessing import Pool
 
 from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, NonLinearUnit
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
-from tp2.multilayer import MultilayerNetwork
+from tp2.multilayer import MultilayerNetwork, InvalidChunkSize
 from typing import Callable, Tuple, List
 
 
@@ -362,6 +362,13 @@ class TestMultiLayerNetwork(unittest.TestCase):
         for (x, y) in xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
+    def test_train_and_process_xor_wrongbatch(self):
+        layers = [2, 2, 1]
+        mn = MultilayerNetwork(layers)
+        with self.assertRaises(InvalidChunkSize):
+            mn.train(xor_gate_table, 5)
+
+
     def test_train_and_process_large_xor(self):
         layers = [4, 5, 1]
         mn = MultilayerNetwork(layers)
@@ -370,7 +377,7 @@ class TestMultiLayerNetwork(unittest.TestCase):
         for (x, y) in large_xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
-    def test_train_and_process_large_xor_gradient(self):
+    def test_train_and_process_large_xor_minibatch(self):
         layers = [4, 5, 1]
         mn = MultilayerNetwork(layers)
         mn.train(large_xor_gate_table, 2)
