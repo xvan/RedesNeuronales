@@ -1,9 +1,10 @@
 import unittest
 from tp2.perceptron import ThresholdUnit, TrainDataType
-from tp2.multilayer import MultilayerTrainer, MultilayerNetwork
+from tp2.multilayer import MultilayerTrainer, MultilayerNetwork, SingleAttemptMultilayerTrainer
 import tp2.aux as tp2Aux
-import numpy as np
 
+import numpy as np
+import numpy.testing as npt
 
 class TestAuxFunctions(unittest.TestCase):
 
@@ -63,4 +64,7 @@ class TestAuxFunctions(unittest.TestCase):
         trainer_xor2 = MultilayerTrainer(mn_xor2, xor_gate_table, 1)
         trainer_xor2.train()
         tp2Aux.plot_all_cuts(trainer_xor2, xor_gate_table)
+
+
+
 

@@ -167,3 +167,13 @@ class MultilayerTrainer:
             self.failed_attempts = 0
             self.best_cost = self.last_cost
             self._save_best_weights()
+
+
+class SingleAttemptMultilayerTrainer(MultilayerTrainer):
+    def __init__(self, network: MultilayerNetwork, data: TrainDataType, chunk_size: int):
+        super().__init__(network, data, chunk_size)
+
+    def _update_exit_control(self):
+        self.failed_attempts = np.inf
+        self.best_cost = self.last_cost
+        self._save_best_weights()

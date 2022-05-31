@@ -100,3 +100,38 @@ def plot_all_cuts_per_sample(trainer: MultilayerTrainer, data: TrainDataType):
         # cbar = plt.colorbar(PC, cax=cax1)
         trainer.best_weights = copy.deepcopy(W)
         trainer._restore_best_weights()
+
+
+class Exercise4:
+    @staticmethod
+    def target_function(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray:
+        return (np.sin(x) + np.cos(y) + z)/3.0
+
+    @staticmethod
+    def generate_samples(samples_per_dimension: int) -> np.ndarray:
+        xv, yv, zv = Exercise4.generate_mesh(samples_per_dimension)
+        kk = Exercise4.target_function(xv, yv, zv)
+        return np.array([xv.ravel(), yv.ravel(), zv.ravel(), kk.ravel()]).transpose()
+
+    @staticmethod
+    def split_training_set(samples: np.ndarray, split_ratio: float) -> (np.ndarray, np.ndarray):
+        np.random.shuffle(samples)
+        return np.split(samples, [int(np.ceil(len(samples) * split_ratio))])
+
+    @staticmethod
+    def generate_mesh(samples_per_dimension):
+        x = y = np.linspace(0, 2*np.pi, samples_per_dimension, endpoint=True)
+        z = np.linspace(0, 1, samples_per_dimension, endpoint=True)
+        xv, yv, zv = np.meshgrid(x, y, z)
+        return xv, yv, zv
+
+    @staticmethod
+    def generate_dataset(samples_per_dim: int, split_ratio: float) -> (np.ndarray, np.ndarray):
+        samples = Exercise4.generate_samples(samples_per_dim)
+        trainin_samples = list(zip(samples[:, :-1], samples[:, -1:]))
+        return trainin_samples,[]
+        #return Exercise4.split_training_set(samples, split_ratio)
+
+
+    def magia(self):
+        training_samples, testing_samples = Exercise4.generate_dataset(100, 0.8)
