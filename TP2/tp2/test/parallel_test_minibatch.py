@@ -26,7 +26,6 @@ class ParallelTestMinibatch(unittest.TestCase):
         learning_rate = [0.1, 0.05, 0.01, 0.005, 0.001]
 
         param_combinations = ((training_samples, s, r) for s, r in itertools.product(minibatch_sizes, learning_rate))
-        param_combinations = list(param_combinations)[:3]
         with Pool(processes=8) as pool:  # run no more than 6 at a time
             TT = pool.starmap(self.train_minibatch, param_combinations)
             with open(os.path.expanduser("~/results.pkl"), "wb") as fo:
