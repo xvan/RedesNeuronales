@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import pickle
+import os
 
 from multiprocessing import Pool
 
@@ -25,10 +26,10 @@ class ParallelTestMinibatch(unittest.TestCase):
         learning_rate = [0.1, 0.05, 0.01, 0.005, 0.001]
 
         param_combinations = ((training_samples, s, r) for s, r in itertools.product(minibatch_sizes, learning_rate))
-
+        param_combinations = list(param_combinations)[:3]
         with Pool(processes=8) as pool:  # run no more than 6 at a time
             TT = pool.starmap(self.train_minibatch, param_combinations)
-            with open("~/results.pkl", "wb") as fo:
+            with open(os.path.expanduser("~/results.pkl"), "wb") as fo:
                 pickle.dump(TT, fo)
 
     @staticmethod
@@ -44,7 +45,7 @@ class ParallelTestMinibatch(unittest.TestCase):
         trainer.learning_rate = learning_rate
         trainer.train()
         pd.DataFrame(func_costs, columns=["cost"]).to_csv("~/results_%s_%s.csv" % (str(batch_size), str(learning_rate)))
-        return batch_size, learning_rate, trainer.best_weights(), func_costs
+        return batch_size, learning_rate, trainer.best_weights, func_costs
 
 if __name__ == '__main__':
     unittest.main()
