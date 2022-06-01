@@ -355,7 +355,7 @@ class TestMultiLayerNetwork(unittest.TestCase):
             npt.assert_array_equal(y, np.sign(mn.process(x)))
 
     def test_train_and_process_xor_gradient(self):
-        layers = [2, 2, 1]
+        layers = [2, 5, 1]
         mn = MultilayerNetwork(layers)
 
         mn.train(xor_gate_table, len(xor_gate_table))
