@@ -9,6 +9,7 @@ from multiprocessing import Pool
 from tp2.multilayer import SingleAttemptMultilayerTrainer, MultilayerNetwork
 import tp2.aux as tp2Aux
 
+
 class ParallelTestMinibatch(unittest.TestCase):
 
     @staticmethod
@@ -32,12 +33,14 @@ class ParallelTestMinibatch(unittest.TestCase):
 
     @staticmethod
     def train_minibatch(training_samples, batch_size, learning_rate):
+        print(batch_size, learning_rate)
+        np.seterr(all="ignore")
         layers = [3, 25, 1]
         func_costs = []
         mn = MultilayerNetwork(layers)
         mn.perceptrons[-1].activator = lambda x: x
-        trainer = SingleAttemptMultilayerTrainer(mn, training_samples, )
-        trainer.cost_callback = lambda x: func_costs.append()
+        trainer = SingleAttemptMultilayerTrainer(mn, training_samples, batch_size)
+        trainer.cost_callback = lambda x: func_costs.append(x)
         trainer.learning_rate = learning_rate
         trainer.train()
         pd.DataFrame(func_costs, columns=["cost"]).to_csv("~/results_%s_%s.csv" % (str(batch_size), str(learning_rate)))

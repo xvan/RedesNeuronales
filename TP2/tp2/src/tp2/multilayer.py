@@ -43,12 +43,15 @@ class MultilayerTrainer:
         self.cost_callback: Callable[[float], None] = lambda c: None
 
     def _init_costs_log(self):
-        buffer_size = 10
-        self.last_costs = RingBuffer(buffer_size)
-        self.long_costs = RingBuffer(buffer_size)
+        last_buffer_size = 10
+        long_buffer_size = 100
+        self.last_costs = RingBuffer(last_buffer_size)
+        self.long_costs = RingBuffer(long_buffer_size)
 
-        for _ in range(buffer_size):
+        for _ in range(last_buffer_size):
             self.last_costs.append(np.inf)
+
+        for _ in range(long_buffer_size):
             self.long_costs.append(np.inf)
 
     @property
