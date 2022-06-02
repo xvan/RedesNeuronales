@@ -14,6 +14,13 @@ import tp2.aux as tp2Aux
 from tp2.perceptron import TrainDataType
 
 
+class SequentialTestMinibatch(unittest.TestCase):
+    #@unittest.skip("For Debugging Purposes")
+    def test_one(self):
+        training_samples, testing_samples = tp2Aux.Exercise4.generate_dataset(20, 0.8)
+        ParallelTestMinibatch.train_minibatch(training_samples, testing_samples, 125.0, 0.5)
+
+
 class ParallelTestMinibatch(unittest.TestCase):
 
     @staticmethod
@@ -43,7 +50,7 @@ class ParallelTestMinibatch(unittest.TestCase):
         mn = MultilayerNetwork(layers)
         mn.perceptrons[-1].activator = lambda x: x
         trainer = SingleAttemptMultilayerTrainer(mn, training_samples, batch_size)
-        logger = EpochLogger(mn, testing_samples)
+        logger = EpochLogger(trainer, testing_samples)
         trainer.cost_callback = lambda x: logger.log_epoch(x)
         trainer.learning_rate = learning_rate
         trainer.iterations_limit = 20000

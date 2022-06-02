@@ -128,10 +128,9 @@ class Exercise4:
     @staticmethod
     def generate_dataset(samples_per_dim: int, split_ratio: float) -> (np.ndarray, np.ndarray):
         samples = Exercise4.generate_samples(samples_per_dim)
-        trainin_samples = list(zip(samples[:, :-1], samples[:, -1:]))
-        return trainin_samples,[]
-        #return Exercise4.split_training_set(samples, split_ratio)
+        return tuple(Exercise4.numpy_to_training_data(subset)
+                     for subset in Exercise4.split_training_set(samples, split_ratio))
 
-
-    def magia(self):
-        training_samples, testing_samples = Exercise4.generate_dataset(100, 0.8)
+    @staticmethod
+    def numpy_to_training_data(samples:np.ndarray) -> TrainDataType:
+        return list(zip(samples[:, :-1], samples[:, -1:]))
