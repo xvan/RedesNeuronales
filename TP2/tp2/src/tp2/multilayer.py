@@ -8,6 +8,8 @@ from dvg_ringbuffer import RingBuffer
 
 from tp2.perceptron import NonLinearUnit, TrainDataType
 
+from multiprocessing import current_process
+
 
 class MultilayerNetwork:
     def __init__(self, layers: List[int]):
@@ -40,11 +42,11 @@ class MultilayerTrainer:
         self.iterations_limit: float = 100000
         self.data: TrainDataType = copy.deepcopy(data)
         self.chunk_size = chunk_size
-        self.cost_callback: Callable[[float], None] = lambda c: None
+        self.epoch_callback: Callable[[float], None] = lambda c: None
 
     def _init_costs_log(self):
         last_buffer_size = 10
-        long_buffer_size = 100
+        long_buffer_size = 10
         self.last_costs = RingBuffer(last_buffer_size)
         self.long_costs = RingBuffer(long_buffer_size)
 
@@ -93,7 +95,8 @@ class MultilayerTrainer:
 
     def _train_attempt(self):
         self._init_attempt_states()
-        for _ in range(self.iterations_limit):
+        for n in range(self.iterations_limit):
+            print(current_process().name, "iteration", n)
             cost = self._train_step()
             self._update_costs_log(cost)
             if self._improvement_not_significant():
@@ -104,7 +107,7 @@ class MultilayerTrainer:
         self.last_costs.append(cost)
         mean_cost = np.mean(self.last_costs)
         self.long_costs.append(mean_cost)
-        self.cost_callback(cost)
+        self.epoch_callback(cost)
 
     @property
     def number_of_chunks(self) -> int:
@@ -116,7 +119,10 @@ class MultilayerTrainer:
 
     @property
     def chunked_data(self) -> List[TrainDataType]:
-        return np.array_split(self.shuffled_data[:self.number_of_chunks*self.chunk_size], self.number_of_chunks)
+        try:
+            return np.array_split(self.shuffled_data[:self.number_of_chunks*self.chunk_size], self.number_of_chunks)
+        except Exception:
+            raise Exception("%i, %i, %i" % (len(self.shuffled_data), self.number_of_chunks, self.chunk_size))
 
     def _train_step(self):
         chunks = self.chunked_data
@@ -180,3 +186,7 @@ class SingleAttemptMultilayerTrainer(MultilayerTrainer):
         self.failed_attempts = np.inf
         self.best_cost = self.last_cost
         self._save_best_weights()
+
+    def _improvement_not_significant(self):
+        return False
+
