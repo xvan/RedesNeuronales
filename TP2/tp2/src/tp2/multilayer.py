@@ -8,8 +8,6 @@ from dvg_ringbuffer import RingBuffer
 
 from tp2.perceptron import NonLinearUnit, TrainDataType
 
-from multiprocessing import current_process
-
 
 class MultilayerNetwork:
     def __init__(self, layers: List[int]):
@@ -41,8 +39,8 @@ class MultilayerTrainer:
         self.learning_rate: float = 0.01
         self.iterations_limit: float = 100000
         self.data: TrainDataType = copy.deepcopy(data)
-        self.chunk_size = chunk_size
-        self.epoch_callback: Callable[[float], None] = lambda c: None
+        self.chunk_size = int(chunk_size)
+        self.cost_callback: Callable[[float], None] = lambda c: None
 
     def _init_costs_log(self):
         last_buffer_size = 10
@@ -95,8 +93,7 @@ class MultilayerTrainer:
 
     def _train_attempt(self):
         self._init_attempt_states()
-        for n in range(self.iterations_limit):
-            print(current_process().name, "iteration", n)
+        for _ in range(self.iterations_limit):
             cost = self._train_step()
             self._update_costs_log(cost)
             if self._improvement_not_significant():
@@ -107,7 +104,7 @@ class MultilayerTrainer:
         self.last_costs.append(cost)
         mean_cost = np.mean(self.last_costs)
         self.long_costs.append(mean_cost)
-        self.epoch_callback(cost)
+        self.cost_callback(cost)
 
     @property
     def number_of_chunks(self) -> int:
@@ -115,14 +112,12 @@ class MultilayerTrainer:
 
     @property
     def shuffled_data(self) -> TrainDataType:
-        return random.sample(self.data, len(self.data))
+        return random.sample(self.data, self.number_of_chunks * self.chunk_size)
 
     @property
     def chunked_data(self) -> List[TrainDataType]:
-        try:
-            return np.array_split(self.shuffled_data[:self.number_of_chunks*self.chunk_size], self.number_of_chunks)
-        except Exception:
-            raise Exception("%i, %i, %i" % (len(self.shuffled_data), self.number_of_chunks, self.chunk_size))
+        data = np.array(self.shuffled_data, dtype=object)
+        return np.array_split(data, self.number_of_chunks)
 
     def _train_step(self):
         chunks = self.chunked_data
@@ -132,7 +127,7 @@ class MultilayerTrainer:
         sample_costs, sample_deltas = zip(*[self._train_sample(xo, y) for xo, y in chunk])
         self._set_deltas(np.mean(sample_deltas, axis=0))
         self._update_weights()
-        return np.sum(sample_costs)
+        return np.mean(sample_costs)
 
     def _train_sample(self, xo, y):
         cost = self._set_network_states(xo, y)

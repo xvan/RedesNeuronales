@@ -134,6 +134,3 @@ class Exercise4:
     @staticmethod
     def numpy_to_training_data(samples:np.ndarray) -> TrainDataType:
         return list(zip(samples[:, :-1], samples[:, -1:]))
-
-    def magia(self):
-        training_samples, testing_samples = Exercise4.generate_dataset(100, 0.8)
