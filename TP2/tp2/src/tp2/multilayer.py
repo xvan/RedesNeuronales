@@ -108,7 +108,7 @@ class MultilayerTrainer:
 
     @property
     def number_of_chunks(self) -> int:
-        return int(np.ceil(len(self.data) / self.chunk_size))
+        return int(np.floor(len(self.data) / self.chunk_size))
 
     @property
     def shuffled_data(self) -> TrainDataType:
@@ -116,7 +116,7 @@ class MultilayerTrainer:
 
     @property
     def chunked_data(self) -> List[TrainDataType]:
-        return np.array_split(np.array(self.shuffled_data, dtype=object), self.number_of_chunks)
+        return np.array_split(self.shuffled_data[:self.number_of_chunks*self.chunk_size], self.number_of_chunks)
 
     def _train_step(self):
         chunks = self.chunked_data
@@ -124,7 +124,7 @@ class MultilayerTrainer:
 
     def _train_chunk(self, chunk: TrainDataType) -> float:
         sample_costs, sample_deltas = zip(*[self._train_sample(xo, y) for xo, y in chunk])
-        self._set_deltas(np.sum(sample_deltas, axis=0))
+        self._set_deltas(np.mean(sample_deltas, axis=0))
         self._update_weights()
         return np.sum(sample_costs)
 
