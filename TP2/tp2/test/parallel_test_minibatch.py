@@ -15,14 +15,13 @@ from tp2.perceptron import TrainDataType
 
 
 class SequentialTestMinibatch(unittest.TestCase):
-    #@unittest.skip("For Debugging Purposes")
+    @unittest.skip("For Debugging Purposes")
     def test_one(self):
         training_samples, testing_samples = tp2Aux.Exercise4.generate_dataset(20, 0.8)
-        ParallelTestMinibatch.train_minibatch(training_samples, testing_samples, 125.0, 0.5)
+        ParallelTestMinibatch.train_minibatch(0, training_samples, testing_samples, 1, 0.05)
 
 
 class ParallelTestMinibatch(unittest.TestCase):
-
     @staticmethod
     def minibatch_sizes_generator(n):
         yield n
@@ -35,16 +34,17 @@ class ParallelTestMinibatch(unittest.TestCase):
         minibatch_sizes = list(self.minibatch_sizes_generator(len(training_samples)))
         learning_rate = [0.1, 0.05, 0.01, 0.005, 0.001]
 
-        param_combinations = ((training_samples, testing_samples, s, r)
-                              for s, r in itertools.product(minibatch_sizes, learning_rate))
+        param_combinations = [(n, training_samples, testing_samples, s, r)
+                              for n, (s, r) in enumerate(itertools.product(minibatch_sizes, learning_rate))]
+        print("total: ", len(param_combinations))
         with Pool(processes=8) as pool:  # run no more than 6 at a time
             TT = pool.starmap(self.train_minibatch, param_combinations)
             with open(os.path.expanduser("~/results.pkl"), "wb") as fo:
                 pickle.dump(TT, fo)
 
     @staticmethod
-    def train_minibatch(training_samples, testing_samples, batch_size, learning_rate):
-        print(batch_size, learning_rate)
+    def train_minibatch(idx, training_samples, testing_samples, batch_size, learning_rate):
+        print("starting:", idx, batch_size, learning_rate)
         np.seterr(all="ignore")
         layers = [3, 25, 1]
         mn = MultilayerNetwork(layers)
@@ -55,6 +55,7 @@ class ParallelTestMinibatch(unittest.TestCase):
         trainer.learning_rate = learning_rate
         trainer.iterations_limit = 20000
         trainer.train()
+        print("finished:", idx, batch_size, learning_rate)
         return batch_size, learning_rate, trainer.best_weights, logger.result_costs
 
 class EpochLogger:

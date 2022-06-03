@@ -1,12 +1,15 @@
+from abc import ABCMeta, abstractmethod
+
 import numpy as np
+from scipy.stats import norm
 import copy
-import itertools
 import random
-from typing import Callable, Tuple, List
+from typing import Callable, List
 
 from dvg_ringbuffer import RingBuffer
 
 from tp2.perceptron import NonLinearUnit, TrainDataType
+from tp2.capacity_estimator import IncrementalEstimator
 
 
 class MultilayerNetwork:
@@ -38,6 +41,7 @@ class MultilayerTrainer:
         self.network = network
         self.learning_rate: float = 0.01
         self.iterations_limit: float = 100000
+        self.cost_target: float = 0.005
         self.data: TrainDataType = copy.deepcopy(data)
         self.chunk_size = int(chunk_size)
         self.cost_callback: Callable[[float], None] = lambda c: None
@@ -71,9 +75,14 @@ class MultilayerTrainer:
         while self.failed_attempts < 10:
             self._train_attempt()
             self._update_exit_control()
-            if self.last_cost <= 0.005:
+            if self._cost_target_reached:
                 return
         self._restore_best_weights()
+
+    @property
+    def _cost_target_reached(self):
+        return self.last_cost <= self.cost_target
+
 
     def _restore_best_weights(self):
         for w, p in zip(self.best_weights, self.network.perceptrons):
@@ -96,7 +105,7 @@ class MultilayerTrainer:
         for _ in range(self.iterations_limit):
             cost = self._train_step()
             self._update_costs_log(cost)
-            if self._improvement_not_significant():
+            if self._improvement_not_significant() or self._cost_target_reached:
                 break
 
     def _update_costs_log(self, cost):
@@ -185,3 +194,125 @@ class SingleAttemptMultilayerTrainer(MultilayerTrainer):
     def _improvement_not_significant(self):
         return False
 
+
+class SimulatedAnnealingDut(metaclass=ABCMeta):
+    @abstractmethod
+    def save_state(self):
+        pass
+
+    @abstractmethod
+    def update_state(self):
+        pass
+
+    @abstractmethod
+    def calculate_energy(self) -> float:
+        pass
+
+    @abstractmethod
+    def rollback_state(self):
+        pass
+
+
+class SimulatedAnnealingStep:
+    def __init__(self, dut: SimulatedAnnealingDut, temperature: float, confidence: float = 0.95, precision: float = 0.01):
+        self.energy_target: float = 0.005
+        self.dut = dut
+        self._energy_estimators = IncrementalEstimator()
+        self.percent_point = self._confidence_to_percent_point(confidence)
+        self.precision = precision
+        self.current_energy = np.inf
+        self.temperature = temperature
+
+    class InvalidConfidence(Exception):
+        pass
+
+    @staticmethod
+    def _confidence_to_percent_point(confidence: float):
+        if not 0 < confidence < 1:
+            raise SimulatedAnnealingStep.InvalidConfidence()
+        return norm.ppf((1 + confidence) / 2)
+
+    @property
+    def _stability_threshold(self):
+        return self.percent_point * self._energy_estimators.std / np.sqrt(self._energy_estimators.count)
+
+    @property
+    def _stability_target(self):
+        return self._energy_estimators.mean * self.precision
+
+    @property
+    def _energy_stability_reached(self):
+        print(self._stability_threshold, "<", self._stability_target)
+        return self._stability_threshold < self._stability_target
+
+    @property
+    def energy_target_reached(self):
+        return self.current_energy <= self.energy_target
+
+    def should_accept_change(self, new_energy: float):
+        delta_energy = new_energy - self.current_energy
+        if delta_energy <= 0:
+            return True
+        is_accepted = np.random.rand() < np.exp(-delta_energy / self.temperature)
+        return is_accepted
+
+    def execute(self):
+        self.dut.save_state()
+        self.current_energy = np.inf
+
+        while True:
+            self.dut.update_state()
+            new_energy = self.dut.calculate_energy()
+
+            if self.should_accept_change(new_energy):
+                self.current_energy = new_energy
+                self.dut.save_state()
+            else:
+                self.dut.rollback_state()
+
+            self.update_energy_estimator()
+            if self.energy_target_reached | self._energy_stability_reached:
+                return
+
+    def update_energy_estimator(self):
+        self._energy_estimators.append(self.current_energy)
+
+
+class SimulatedAnnealingMultilayerTrainer(MultilayerTrainer):
+    def __init__(self, network: MultilayerNetwork, data: TrainDataType):
+        super().__init__(network, data, len(data))
+
+    def train(self):
+        start_temperature = 10000
+        temperature_factor = 0.9
+        temperature = start_temperature / temperature_factor #compensate first step
+
+        while True:
+            temperature *= temperature_factor
+            print("temperature:", temperature )
+            step = SimulatedAnnealingStep(MultilayerAnnealingDut(self), temperature)
+            step.execute()
+            if step.energy_target_reached:
+                return
+
+
+class MultilayerAnnealingDut(SimulatedAnnealingDut):
+    def __init__(self, trainer: MultilayerTrainer):
+        self.trainer = trainer
+        self.weights = None
+        self.sigma = 0.01/3
+
+    def save_state(self):
+        self.trainer._save_best_weights()
+        self.weights = self.trainer.best_weights
+
+    def update_state(self):
+        self.trainer.best_weights = [weight + np.random.randn(*weight.shape) * self.sigma for weight in self.weights]
+        self.trainer._restore_best_weights()
+
+    def calculate_energy(self):
+        return np.mean([self.trainer._set_network_states(x, y) for x, y in self.trainer.data])
+
+    def rollback_state(self):
+        self.trainer.best_weights = self.weights
+        self.trainer._restore_best_weights()

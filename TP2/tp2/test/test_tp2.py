@@ -10,7 +10,7 @@ from multiprocessing import Pool
 
 from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, NonLinearUnit
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
-from tp2.multilayer import MultilayerNetwork, InvalidChunkSize
+from tp2.multilayer import MultilayerNetwork, InvalidChunkSize, SimulatedAnnealingMultilayerTrainer
 from typing import Callable, Tuple, List
 
 
@@ -399,6 +399,17 @@ class TestMultiLayerNetwork(unittest.TestCase):
             TT = pool.map(self.xor_task, range(iterations))
             successes = np.sum(TT)
             self.assertEqual(iterations, successes)
+
+
+class TestSimulatedAnnealingMultilayerTrainer(unittest.TestCase):
+    def test_train_and_process_xor(self):
+        layers = [2, 2, 1]
+        mn = MultilayerNetwork(layers)
+        trainer = SimulatedAnnealingMultilayerTrainer(mn, xor_gate_table)
+        trainer.train()
+
+        for (x, y) in xor_gate_table:
+            npt.assert_array_equal(y, np.sign(mn.process(x)))
 
 if __name__ == '__main__':
     unittest.main()
