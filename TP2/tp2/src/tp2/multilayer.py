@@ -289,7 +289,7 @@ class SimulatedAnnealingMultilayerTrainer(MultilayerTrainer):
 
         while True:
             temperature *= temperature_factor
-            print("temperature:", temperature )
+            print("temperature:", temperature)
             step = SimulatedAnnealingStep(MultilayerAnnealingDut(self), temperature)
             step.execute()
             if step.energy_target_reached:
