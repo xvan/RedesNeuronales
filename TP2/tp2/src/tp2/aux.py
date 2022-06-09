@@ -4,7 +4,7 @@ import copy
 import pandas as pd
 import matplotlib.pyplot as plt
 from tp2.perceptron import ThresholdUnit, TrainDataType
-from tp2.multilayer import MultilayerTrainer
+from tp2.multilayer import BackPropagationMultistartTrainer
 
 
 def train_data_to_df(data):
@@ -39,7 +39,7 @@ def plot_row_generator(columns):
             yield subplot
 
 
-def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
+def plot_all_cuts(trainer: BackPropagationMultistartTrainer, data: TrainDataType):
     W = copy.deepcopy(trainer.best_weights)
     weigth_coords = [(x, y) for x in range(len(W)) for y in np.ndindex(W[x].shape)]
 
@@ -67,7 +67,7 @@ def plot_all_cuts(trainer: MultilayerTrainer, data: TrainDataType):
         trainer._restore_best_weights()
 
 
-def plot_all_cuts_per_sample(trainer: MultilayerTrainer, data: TrainDataType):
+def plot_all_cuts_per_sample(trainer: BackPropagationMultistartTrainer, data: TrainDataType):
     W = copy.deepcopy(trainer.best_weights)
     weigth_coords = [(x, y) for x in range(len(W)) for y in np.ndindex(W[x].shape)]
 

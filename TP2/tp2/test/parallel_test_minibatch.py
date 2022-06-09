@@ -9,7 +9,7 @@ import os
 
 from multiprocessing import Pool
 
-from tp2.multilayer import SingleAttemptMultilayerTrainer, MultilayerNetwork, MultilayerTrainer
+from tp2.multilayer import BackPropagationTrainer, MultilayerNetwork, BackPropagationMultistartTrainer
 import tp2.aux as tp2Aux
 from tp2.perceptron import TrainDataType
 
@@ -50,7 +50,7 @@ class ParallelTestMinibatch(unittest.TestCase):
         layers = [3, 15, 1]
         mn = MultilayerNetwork(layers)
         mn.perceptrons[-1].activator = lambda x: x
-        trainer = SingleAttemptMultilayerTrainer(mn, training_samples, batch_size)
+        trainer = BackPropagationTrainer(mn, training_samples, batch_size)
         logger = EpochLogger(trainer, testing_samples)
         trainer.cost_callback = lambda x: logger.log_epoch(x)
         trainer.learning_rate = learning_rate
@@ -61,7 +61,7 @@ class ParallelTestMinibatch(unittest.TestCase):
         return batch_size, learning_rate, trainer.best_weights, logger.result_costs
 
 class EpochLogger:
-    def __init__(self, multilayer_trainer: MultilayerTrainer, test_samples: TrainDataType):
+    def __init__(self, multilayer_trainer: BackPropagationMultistartTrainer, test_samples: TrainDataType):
         self.multilayer_trainer = multilayer_trainer
         self.test_samples = test_samples
         self.training_costs: List[float] = []

@@ -10,7 +10,7 @@ from multiprocessing import Pool
 
 from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, NonLinearUnit
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
-from tp2.multilayer import MultilayerNetwork, InvalidChunkSize, SimulatedAnnealingMultilayerTrainer
+from tp2.multilayer import MultilayerNetwork, InvalidChunkSize, SimulatedAnnealingTrainer
 from typing import Callable, Tuple, List
 
 
@@ -405,7 +405,7 @@ class TestSimulatedAnnealingMultilayerTrainer(unittest.TestCase):
     def test_train_and_process_xor(self):
         layers = [2, 2, 1]
         mn = MultilayerNetwork(layers)
-        trainer = SimulatedAnnealingMultilayerTrainer(mn, xor_gate_table)
+        trainer = SimulatedAnnealingTrainer(mn, xor_gate_table)
         trainer.train()
 
         for (x, y) in xor_gate_table:

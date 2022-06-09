@@ -26,23 +26,48 @@ class MultilayerNetwork:
         return self.state[-1]
 
     def train(self, data: TrainDataType, chunk_size=1):
-        MultilayerTrainer(self, data, chunk_size).train()
+        BackPropagationMultistartTrainer(self, data, chunk_size).train()
 
 
 class InvalidChunkSize(Exception):
     pass
 
 
-class MultilayerTrainer:
+class AbstractMultilayerTrainer(metaclass=ABCMeta):
+    def __init__(self, network: MultilayerNetwork, data: TrainDataType):
+        self.network = network
+        self.data: TrainDataType = copy.deepcopy(data)
+        self.best_weights = [np.copy(p.weights) for p in self.network.perceptrons]
+        self.iterations_limit: float = 100000
+
+    def _restore_best_weights(self):
+        for w, p in zip(self.best_weights, self.network.perceptrons):
+            p.weights = w
+
+    @abstractmethod
+    def train(self):
+        pass
+
+    def _save_best_weights(self):
+        self.best_weights = [np.copy(p.weights) for p in self.network.perceptrons]
+
+    def _random_initialize_weights(self):
+        for perceptron in self.network.perceptrons:
+            perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
+
+    def _set_network_states(self, xo, y):
+        self.network.process(xo)
+        return self.network.perceptrons[-1].sample_cost(y)
+
+
+class BackPropagationMultistartTrainer(AbstractMultilayerTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType, chunk_size: int):
         if len(data) < chunk_size:
             raise InvalidChunkSize()
 
-        self.network = network
+        super().__init__(network, data)
         self.learning_rate: float = 0.01
-        self.iterations_limit: float = 100000
         self.cost_target: float = 0.005
-        self.data: TrainDataType = copy.deepcopy(data)
         self.chunk_size = int(chunk_size)
         self.cost_callback: Callable[[float], None] = lambda c: None
 
@@ -82,14 +107,6 @@ class MultilayerTrainer:
     @property
     def _cost_target_reached(self):
         return self.last_cost <= self.cost_target
-
-
-    def _restore_best_weights(self):
-        for w, p in zip(self.best_weights, self.network.perceptrons):
-            p.weights = w
-
-    def _save_best_weights(self):
-        self.best_weights = [np.copy(p.weights) for p in self.network.perceptrons]
 
     def _init_attempt_states(self):
         self._random_initialize_weights()
@@ -162,14 +179,6 @@ class MultilayerTrainer:
             propagated_delta = self.network.perceptrons[idx + 1].back_propagate_delta()
             self.network.perceptrons[idx].hidden_delta(propagated_delta)
 
-    def _set_network_states(self, xo, y):
-        self.network.process(xo)
-        return self.network.perceptrons[-1].sample_cost(y)
-
-    def _random_initialize_weights(self):
-        for perceptron in self.network.perceptrons:
-            perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
-
     def _improvement_not_significant(self):
         return 0.999 * self.old_mean_cost < self.mean_cost
 
@@ -182,7 +191,7 @@ class MultilayerTrainer:
             self._save_best_weights()
 
 
-class SingleAttemptMultilayerTrainer(MultilayerTrainer):
+class BackPropagationTrainer(BackPropagationMultistartTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType, chunk_size: int):
         super().__init__(network, data, chunk_size)
 
@@ -278,9 +287,9 @@ class SimulatedAnnealingStep:
         self._energy_estimators.append(self.current_energy)
 
 
-class SimulatedAnnealingMultilayerTrainer(MultilayerTrainer):
+class SimulatedAnnealingTrainer(AbstractMultilayerTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType):
-        super().__init__(network, data, len(data))
+        super().__init__(network, data)
         self.temperature_callback: Callable[[float, float], None] = lambda t,c: None
 
     def train(self):
@@ -298,7 +307,7 @@ class SimulatedAnnealingMultilayerTrainer(MultilayerTrainer):
 
 
 class MultilayerAnnealingDut(SimulatedAnnealingDut):
-    def __init__(self, trainer: MultilayerTrainer):
+    def __init__(self, trainer: SimulatedAnnealingTrainer):
         self.trainer = trainer
         self.weights = None
         self.sigma = 0.01/3
