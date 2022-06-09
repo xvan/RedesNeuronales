@@ -31,8 +31,9 @@ class ParallelTestMinibatch(unittest.TestCase):
 
     def test_minibatch(self):
         training_samples, testing_samples = tp2Aux.Exercise4.generate_dataset(20, 0.8)
-        minibatch_sizes = list(self.minibatch_sizes_generator(len(training_samples)))
-        learning_rate = [0.1, 0.05, 0.01, 0.005, 0.001]
+        #minibatch_sizes = list(self.minibatch_sizes_generator(len(training_samples)))
+        minibatch_sizes = [6400, 1600, 400, 100, 25, 4, 1]
+        learning_rate = [0.01, 0.005, 0.001]
 
         param_combinations = [(n, training_samples, testing_samples, s, r)
                               for n, (s, r) in enumerate(itertools.product(minibatch_sizes, learning_rate))]
@@ -46,14 +47,15 @@ class ParallelTestMinibatch(unittest.TestCase):
     def train_minibatch(idx, training_samples, testing_samples, batch_size, learning_rate):
         print("starting:", idx, batch_size, learning_rate)
         np.seterr(all="ignore")
-        layers = [3, 25, 1]
+        layers = [3, 15, 1]
         mn = MultilayerNetwork(layers)
         mn.perceptrons[-1].activator = lambda x: x
         trainer = SingleAttemptMultilayerTrainer(mn, training_samples, batch_size)
         logger = EpochLogger(trainer, testing_samples)
         trainer.cost_callback = lambda x: logger.log_epoch(x)
         trainer.learning_rate = learning_rate
-        trainer.iterations_limit = 1000
+        trainer.iterations_limit = 20000
+        trainer.cost_target = 0.01
         trainer.train()
         print("finished:", idx, trainer.best_cost, batch_size, learning_rate)
         return batch_size, learning_rate, trainer.best_weights, logger.result_costs
