@@ -242,7 +242,7 @@ class SimulatedAnnealingStep:
 
     @property
     def _energy_stability_reached(self):
-        print(self._stability_threshold, "<", self._stability_target)
+        #print(self._stability_threshold, "<", self._stability_target)
         return self._stability_threshold < self._stability_target
 
     @property
@@ -281,6 +281,7 @@ class SimulatedAnnealingStep:
 class SimulatedAnnealingMultilayerTrainer(MultilayerTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType):
         super().__init__(network, data, len(data))
+        self.temperature_callback: Callable[[float, float], None] = lambda t,c: None
 
     def train(self):
         start_temperature = 10000
@@ -289,9 +290,9 @@ class SimulatedAnnealingMultilayerTrainer(MultilayerTrainer):
 
         while True:
             temperature *= temperature_factor
-            print("temperature:", temperature)
             step = SimulatedAnnealingStep(MultilayerAnnealingDut(self), temperature)
             step.execute()
+            self.temperature_callback(temperature, step.current_energy)
             if step.energy_target_reached:
                 return
 

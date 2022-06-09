@@ -4,6 +4,7 @@ matplotlib
 plotly
 six
 tenacity
-setuptools~=57.0.0
+setuptools
 dvg-ringbuffer
 pandas
+scipy
