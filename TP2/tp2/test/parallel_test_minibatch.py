@@ -54,7 +54,7 @@ class ParallelTestMinibatch(unittest.TestCase):
         logger = EpochLogger(trainer, testing_samples)
         trainer.cost_callback = lambda x: logger.log_epoch(x)
         trainer.learning_rate = learning_rate
-        trainer.iterations_limit = 100
+        trainer.iterations_limit = 20000
         trainer.cost_target = 0.01
         trainer.train()
         print("finished:", idx, trainer.best_cost, batch_size, learning_rate)
