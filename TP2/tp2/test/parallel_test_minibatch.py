@@ -47,14 +47,14 @@ class ParallelTestMinibatch(unittest.TestCase):
     def train_minibatch(idx, training_samples, testing_samples, batch_size, learning_rate):
         print("starting:", idx, batch_size, learning_rate)
         np.seterr(all="ignore")
-        layers = [3, 15, 1]
+        layers = [3, 100, 1]
         mn = MultilayerNetwork(layers)
         mn.perceptrons[-1].activator = lambda x: x
         trainer = BackPropagationTrainer(mn, training_samples, batch_size)
         logger = EpochLogger(trainer, testing_samples)
         trainer.cost_callback = lambda x: logger.log_epoch(x)
         trainer.learning_rate = learning_rate
-        trainer.iterations_limit = 20000
+        trainer.iterations_limit = 100
         trainer.cost_target = 0.01
         trainer.train()
         print("finished:", idx, trainer.best_cost, batch_size, learning_rate)
