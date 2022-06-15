@@ -17,7 +17,7 @@ from tp2.perceptron import TrainDataType
 class SequentialTestMinibatch(unittest.TestCase):
     @unittest.skip("For Debugging Purposes")
     def test_one(self):
-        training_samples, testing_samples = tp2Aux.Exercise4.generate_dataset(20, 0.8)
+        training_samples, testing_samples = tp2Aux.Exercise4.generate_random_dataset(20, 0.8)
         ParallelTestMinibatch.train_minibatch(0, training_samples, testing_samples, 1, 0.05)
 
 
@@ -30,10 +30,11 @@ class ParallelTestMinibatch(unittest.TestCase):
             yield n
 
     def test_minibatch(self):
-        training_samples, testing_samples = tp2Aux.Exercise4.generate_dataset(20, 0.8)
+        training_samples, testing_samples = tp2Aux.Exercise4.generate_random_dataset(20, 0.8)
         #minibatch_sizes = list(self.minibatch_sizes_generator(len(training_samples)))
         minibatch_sizes = [6400, 1600, 400, 100, 25, 4, 1]
-        learning_rate = [0.01, 0.005, 0.001]
+        #learning_rate = [0.01, 0.005, 0.001]
+        learning_rate = [0.0005, 0.0001]
 
         param_combinations = [(n, training_samples, testing_samples, s, r)
                               for n, (s, r) in enumerate(itertools.product(minibatch_sizes, learning_rate))]
@@ -47,7 +48,7 @@ class ParallelTestMinibatch(unittest.TestCase):
     def train_minibatch(idx, training_samples, testing_samples, batch_size, learning_rate):
         print("starting:", idx, batch_size, learning_rate)
         np.seterr(all="ignore")
-        layers = [3, 100, 1]
+        layers = [3, 25, 1]
         mn = MultilayerNetwork(layers)
         mn.perceptrons[-1].activator = lambda x: x
         trainer = BackPropagationTrainer(mn, training_samples, batch_size)

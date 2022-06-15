@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import itertools
 import copy
@@ -78,7 +80,7 @@ def plot_all_cuts_per_sample(trainer: BackPropagationMultistartTrainer, data: Tr
     coord_combination = list(itertools.combinations(weigth_coords, 2))
 
     for (weight_coord_x, weight_coord_y) in coord_combination:
-        figure, plotRows  = plt.subplots(1, len(data))
+        figure, plotRows = plt.subplots(1, len(data))
         for (v, h), subplot in zip(data, plotRows.ravel()):
             zz = np.zeros((mesh_size, mesh_size))
             for xi, x in enumerate(space):
@@ -126,11 +128,48 @@ class Exercise4:
         return xv, yv, zv
 
     @staticmethod
-    def generate_dataset(samples_per_dim: int, split_ratio: float) -> (np.ndarray, np.ndarray):
+    def generate_regular_dataset(samples_per_dim: int, split_ratio: float) -> (np.ndarray, np.ndarray):
         samples = Exercise4.generate_samples(samples_per_dim)
         return tuple(Exercise4.numpy_to_training_data(subset)
                      for subset in Exercise4.split_training_set(samples, split_ratio))
 
     @staticmethod
-    def numpy_to_training_data(samples:np.ndarray) -> TrainDataType:
+    def generate_random_dataset(samples_per_dim: int, split_ratio: float) -> (np.ndarray, np.ndarray):
+        samples = np.random.rand(samples_per_dim**3, 3)
+        samples[:, :2] *= 2*np.pi
+
+        samples = np.hstack([samples, Exercise4.target_function(samples[:, 0], samples[:, 1], samples[:, 2]).reshape(-1, 1)])
+
+        return tuple(Exercise4.numpy_to_training_data(subset)
+                     for subset in Exercise4.split_training_set(samples, split_ratio))
+
+    @staticmethod
+    def numpy_to_training_data(samples: np.ndarray) -> TrainDataType:
         return list(zip(samples[:, :-1], samples[:, -1:]))
+
+    @staticmethod
+    def load_pickled_data():
+        #tuple (Hidden Layer Size, Pkl Path)
+        sim_data_files = [(100, "data/minibatch_100h_20000e.pkl"),
+                          (25, "data/minibatch_25h_20000e_LL.pkl"),
+                          (15, "data/minibatch_15h_20000e.pkl"),
+                          (25, "data/minibatch_25h_1000e.pkl")]
+
+        sim_data = []
+        for nn, fname in sim_data_files:
+            with open(fname, "rb") as fi:
+                sim_data += [sim_run[:3] + (np.array(sim_run[3]) / 3, nn) for sim_run in pickle.load(fi)]
+
+        return sim_data
+
+    @staticmethod
+    def plot_sim_data(sim_data, legend_col=1):
+        for data in sim_data:
+            error = [pair[0] for pair in data[3]]
+            plt.plot(error, label="(%i, %i, %.4f)" % (data[4], data[0], data[1]))
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.xlabel("epoch")
+        plt.ylabel("cost")
+        plt.legend(title="hidden layer, minibatch, learning rate", ncol=legend_col)
+        plt.title("sin(x)+cos(y)+z")
