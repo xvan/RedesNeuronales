@@ -37,19 +37,18 @@ class AbstractMultilayerTrainer(metaclass=ABCMeta):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType):
         self.network = network
         self.data: TrainDataType = copy.deepcopy(data)
-        self.best_weights = [np.copy(p.weights) for p in self.network.perceptrons]
         self.iterations_limit: float = 100000
 
-    def _restore_best_weights(self):
-        for w, p in zip(self.best_weights, self.network.perceptrons):
+    def set_weights(self, weights):
+        for w, p in zip(weights, self.network.perceptrons):
             p.weights = w
 
     @abstractmethod
     def train(self):
         pass
 
-    def _save_best_weights(self):
-        self.best_weights = [np.copy(p.weights) for p in self.network.perceptrons]
+    def extract_weights(self):
+        return [np.copy(p.weights) for p in self.network.perceptrons]
 
     def _random_initialize_weights(self):
         for perceptron in self.network.perceptrons:
@@ -66,6 +65,8 @@ class BackPropagationMultistartTrainer(AbstractMultilayerTrainer):
             raise InvalidChunkSize()
 
         super().__init__(network, data)
+
+        self.best_weights = self.extract_weights()
         self.learning_rate: float = 0.01
         self.cost_target: float = 0.005
         self.chunk_size = int(chunk_size)
@@ -190,6 +191,12 @@ class BackPropagationMultistartTrainer(AbstractMultilayerTrainer):
             self.best_cost = self.last_cost
             self._save_best_weights()
 
+    def _save_best_weights(self):
+        self.best_weights = self.extract_weights()
+
+    def _restore_best_weights(self):
+        self.set_weights(self.best_weights)
+
 
 class BackPropagationTrainer(BackPropagationMultistartTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType, chunk_size: int):
@@ -313,16 +320,22 @@ class MultilayerAnnealingDut(SimulatedAnnealingDut):
         self.sigma = 0.01/3
 
     def save_state(self):
-        self.trainer._save_best_weights()
-        self.weights = self.trainer.best_weights
+        self.weights = self.trainer.extract_weights()
 
     def update_state(self):
-        self.trainer.best_weights = [weight + np.random.randn(*weight.shape) * self.sigma for weight in self.weights]
-        self.trainer._restore_best_weights()
+        updated_weights = [weight + np.random.randn(*weight.shape) * self.sigma for weight in self.weights]
+        self.trainer.set_weights(updated_weights)
 
     def calculate_energy(self):
         return np.mean([self.trainer._set_network_states(x, y) for x, y in self.trainer.data])
 
     def rollback_state(self):
-        self.trainer.best_weights = self.weights
-        self.trainer._restore_best_weights()
+        self.trainer.set_weights(self.weights)
+
+
+class GeneticTrainer(AbstractMultilayerTrainer):
+    def __init__(self, network: MultilayerNetwork, data: TrainDataType):
+        super().__init__(network, data)
+
+    def train(self):
+        pass
