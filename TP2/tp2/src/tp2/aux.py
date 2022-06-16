@@ -41,7 +41,7 @@ def plot_row_generator(columns):
             yield subplot
 
 
-def plot_all_cuts(trainer: BackPropagationMultistartTrainer, data: TrainDataType):
+def plot_all_cuts(trainer: BackPropagationMultistartTrainer):
     W = copy.deepcopy(trainer.best_weights)
     weigth_coords = [(x, y) for x in range(len(W)) for y in np.ndindex(W[x].shape)]
 
@@ -57,7 +57,7 @@ def plot_all_cuts(trainer: BackPropagationMultistartTrainer, data: TrainDataType
             for yi, y in enumerate(space):
                 trainer.network.perceptrons[weight_coord_x[0]].weights[weight_coord_y[1]] = x
                 trainer.network.perceptrons[weight_coord_y[0]].weights[weight_coord_y[1]] = y
-                zz[(xi, yi)] = np.sum([trainer._set_network_states(x, y) for x, y in data])
+                zz[(xi, yi)] = np.sum(trainer.process_costs())
 
         im = subplot.contourf(space, space, zz, cmap="PuRd", vmin=0, vmax=12)
         #im = subplot.imshow(zz, cmap='PuRd', extent=[-max_weight, max_weight, -max_weight, max_weight], interpolation='bilinear', origin='lower')

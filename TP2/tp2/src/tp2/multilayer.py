@@ -50,13 +50,18 @@ class AbstractMultilayerTrainer(metaclass=ABCMeta):
     def extract_weights(self):
         return [np.copy(p.weights) for p in self.network.perceptrons]
 
+    def generate_random_weights(self):
+        return [np.random.rand(*np.shape(perceptron.weights)) * 2 - 1 for perceptron in self.network.perceptrons]
+
     def _random_initialize_weights(self):
-        for perceptron in self.network.perceptrons:
-            perceptron.weights = np.random.rand(*np.shape(perceptron.weights)) * 2 - 1
+        self.set_weights(self.generate_random_weights())
 
     def _set_network_states(self, xo, y):
         self.network.process(xo)
         return self.network.perceptrons[-1].sample_cost(y)
+
+    def process_costs(self):
+        return [self._set_network_states(x, y) for x, y in self.data]
 
 
 class BackPropagationMultistartTrainer(AbstractMultilayerTrainer):
@@ -327,7 +332,7 @@ class MultilayerAnnealingDut(SimulatedAnnealingDut):
         self.trainer.set_weights(updated_weights)
 
     def calculate_energy(self):
-        return np.mean([self.trainer._set_network_states(x, y) for x, y in self.trainer.data])
+        return np.mean(self.trainer.process_costs())
 
     def rollback_state(self):
         self.trainer.set_weights(self.weights)
@@ -336,6 +341,38 @@ class MultilayerAnnealingDut(SimulatedAnnealingDut):
 class GeneticTrainer(AbstractMultilayerTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType):
         super().__init__(network, data)
+        self.pool_size = 10
+        self.cross_over_probability = 0.2
+        self.mutation_probability = 0.2
+        self.mutation_variance = 0.001
+        self.generation_weights = []
+
+    @property
+    def reproduction_odds(self):
+        return self.generation_fitness / np.sum(self.generation_fitness)
 
     def train(self):
-        pass
+        self.generate_seed()
+        self.generation_fitness = self.calculate_generation_fitness()
+
+        survivors = np.random.choice(enumerate(self.generation_weights), 4, p=self.reproduction_odds)
+
+        self.cross_over(survivors)
+
+    def generate_seed(self):
+        self.generation_weights = [self.generate_random_weights() for _ in range(self.pool_size)]
+
+    def calculate_generation_fitness(self):
+        return [self.calculate_specimen_fitness(specimen_weight) for specimen_weight in self.generation_weights]
+
+    def calculate_specimen_fitness(self, weight):
+        self.set_weights(weight)
+        return np.sum(self.process_costs())
+
+    def cross_over(self, survivors):
+        if len(survivors) % 2 == 1:
+            fittest_survivor = survivors.pop(np.argmax(self.generation_fitness[survivor_index] for survivor_index in survivors))
+
+        #todo iterate by pairs
+
+

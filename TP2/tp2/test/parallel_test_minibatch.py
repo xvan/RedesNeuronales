@@ -73,12 +73,11 @@ class EpochLogger:
         self.testing_costs.append(self.calculate_training_cost())
 
     def calculate_training_cost(self):
-        return np.mean([self.multilayer_trainer._set_network_states(x, y) for x, y in self.test_samples])
+        return np.mean(self.multilayer_trainer.process_costs())
 
     @property
     def result_costs(self):
         return list(zip(self.training_costs, self.testing_costs))
-
 
 if __name__ == '__main__':
     unittest.main()

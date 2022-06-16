@@ -10,7 +10,7 @@ from multiprocessing import Pool
 
 from tp2.perceptron import Perceptron, ThresholdUnit, TrainDataType, NonLinearUnit
 from tp2.capacity_estimator import CapacityEstimator, IncrementalEstimator
-from tp2.multilayer import MultilayerNetwork, InvalidChunkSize, SimulatedAnnealingTrainer
+from tp2.multilayer import MultilayerNetwork, InvalidChunkSize, SimulatedAnnealingTrainer, GeneticTrainer
 from typing import Callable, Tuple, List
 
 
@@ -410,6 +410,27 @@ class TestSimulatedAnnealingMultilayerTrainer(unittest.TestCase):
 
         for (x, y) in xor_gate_table:
             npt.assert_array_equal(y, np.sign(mn.process(x)))
+
+
+class GeneticTrainerTests(unittest.TestCase):
+    def __init__(self, kargs):
+        super().__init__(kargs)
+        layers = [2, 2, 1]
+        self.mn = MultilayerNetwork(layers)
+        self.trainer = GeneticTrainer(self.mn, xor_gate_table)
+
+    def test_seed_generation_creation(self):
+        self.trainer.train()
+        self.assertEqual(self.trainer.pool_size, len(self.trainer.generation_weights))
+
+    def test_calculate_fitness(self):
+       self.trainer.train()
+
+
+    def test_train_and_process_xor(self):
+        self.trainer.train()
+        for (x, y) in xor_gate_table:
+            npt.assert_array_equal(y, np.sign(self.mn.process(x)))
 
 if __name__ == '__main__':
     unittest.main()

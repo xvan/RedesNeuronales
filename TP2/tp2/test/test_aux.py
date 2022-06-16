@@ -63,7 +63,7 @@ class TestAuxFunctions(unittest.TestCase):
         mn_xor2 = MultilayerNetwork([2, 2, 1])
         trainer_xor2 = BackPropagationMultistartTrainer(mn_xor2, xor_gate_table, 1)
         trainer_xor2.train()
-        tp2Aux.plot_all_cuts(trainer_xor2, xor_gate_table)
+        tp2Aux.plot_all_cuts(trainer_xor2)
 
 
 
