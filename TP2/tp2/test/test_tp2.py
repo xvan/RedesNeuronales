@@ -419,6 +419,9 @@ class GeneticTrainerTests(unittest.TestCase):
         self.mn = MultilayerNetwork(layers)
         self.trainer = GeneticTrainer(self.mn, xor_gate_table)
 
+    def test_weights_numel(self):
+        self.assertEqual(9, self.trainer.wights_numel)
+
     def test_seed_generation_creation(self):
         self.trainer.train()
         self.assertEqual(self.trainer.pool_size, len(self.trainer.generation_weights))

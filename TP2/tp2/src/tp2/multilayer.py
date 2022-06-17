@@ -344,8 +344,11 @@ class GeneticTrainer(AbstractMultilayerTrainer):
         self.pool_size = 10
         self.cross_over_probability = 0.2
         self.mutation_probability = 0.2
-        self.mutation_variance = 0.001
+        self.mutation_std = 0.001
+        self.generation_fitness = None
         self.generation_weights = []
+        self.wights_numel = self.calculate_weights_size()
+        self.error_target: float = 0.01
 
     @property
     def reproduction_odds(self):
@@ -353,11 +356,23 @@ class GeneticTrainer(AbstractMultilayerTrainer):
 
     def train(self):
         self.generate_seed()
-        self.generation_fitness = self.calculate_generation_fitness()
+        while True:
+            self.generation_fitness = self.calculate_generation_fitness()
+            if 1/max(self.generation_fitness) <= self.error_target:
+                break
+            self.step_generation()
+        self.set_weights(self.generation_weights[np.argmax(self.generation_fitness)])
 
-        survivors = np.random.choice(enumerate(self.generation_weights), 4, p=self.reproduction_odds)
+    def step_generation(self):
+        survivor_indices = self.choose_survivors()
+        crossed_weights = self.cross_survivors(survivor_indices)
+        self.generation_weights = self.mutate_crossed(crossed_weights)
 
-        self.cross_over(survivors)
+    def mutate_crossed(self, crossed_weights):
+        return [self.mutate(weight) for weight in crossed_weights]
+
+    def choose_survivors(self):
+        return random.choices(list(range(self.pool_size)), self.generation_fitness, k=self.pool_size)
 
     def generate_seed(self):
         self.generation_weights = [self.generate_random_weights() for _ in range(self.pool_size)]
@@ -367,12 +382,46 @@ class GeneticTrainer(AbstractMultilayerTrainer):
 
     def calculate_specimen_fitness(self, weight):
         self.set_weights(weight)
-        return np.sum(self.process_costs())
+        return 1/np.sum(self.process_costs())
 
-    def cross_over(self, survivors):
-        if len(survivors) % 2 == 1:
-            fittest_survivor = survivors.pop(np.argmax(self.generation_fitness[survivor_index] for survivor_index in survivors))
+    def cross_survivors(self, survivor_indices):
+        crossed_weights = []
+        crossed_weights += self.extract_fittest_if_odd(survivor_indices)
+        crossed_weights += [y for idxA, idxB in self.iterate_pairs(survivor_indices)
+                            for y in self.cross_pair(self.generation_weights[idxA], self.generation_weights[idxB])]
+        return crossed_weights
 
-        #todo iterate by pairs
+    def extract_fittest_if_odd(self, survivors):
+        return [survivors.pop(self.fittest_arg(survivors)), ] if len(survivors) % 2 == 1 else []
 
+    @staticmethod
+    def iterate_pairs(iterable):
+        return ((iterable[i], iterable[i+1]) for i in list(range(0, len(iterable), 2)))
 
+    def fittest_arg(self, survivors):
+        return np.argmax(self.generation_fitness[survivor_index] for survivor_index in survivors)
+
+    def cross_pair(self, subject_a, subject_b):
+        subject_a = copy.deepcopy(subject_a)
+        subject_b = copy.deepcopy(subject_b)
+
+        recombination = random.randint(0, np.ceil(self.wights_numel / 2))
+
+        idx = 0
+        for layer_a, layer_b in zip(subject_a, subject_b):
+            for (ia, wa), (ib, wb) in zip(np.ndenumerate(layer_a), np.ndenumerate(layer_b)):
+                if idx < recombination:
+                    layer_a[ia], layer_b[ib] = wb, wa
+                else:
+                    return subject_a, subject_b
+                idx += 1
+
+    def calculate_weights_size(self):
+        return sum(layer.size for layer in self.extract_weights())
+
+    def mutate(self, weight):
+        if not self.has_mutation(): return weight
+        return [layer + np.random.randn(*layer.shape) * self.mutation_std for layer in weight]
+
+    def has_mutation(self):
+        return random.random() > self.mutation_probability
