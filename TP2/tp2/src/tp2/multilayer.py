@@ -344,7 +344,7 @@ class GeneticTrainer(AbstractMultilayerTrainer):
         self.pool_size = 10
         self.cross_over_probability = 0.2
         self.mutation_probability = 0.2
-        self.mutation_std = 0.001
+        self.mutation_std = 0.01
         self.generation_fitness = None
         self.generation_weights = []
         self.wights_numel = self.calculate_weights_size()
@@ -358,6 +358,7 @@ class GeneticTrainer(AbstractMultilayerTrainer):
         self.generate_seed()
         while True:
             self.generation_fitness = self.calculate_generation_fitness()
+            print(1/max(self.generation_fitness))
             if 1/max(self.generation_fitness) <= self.error_target:
                 break
             self.step_generation()
