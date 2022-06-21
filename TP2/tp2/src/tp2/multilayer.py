@@ -359,7 +359,7 @@ class GeneticTrainer(AbstractMultilayerTrainer):
 
     def train(self):
         self.generate_seed()
-        for _ in range(50000):
+        for _ in range(100000):
             self.generation_fitness = self.calculate_generation_fitness()
             self.fitness_callback(self.generation_fitness)
             if 1/max(self.generation_fitness) <= self.error_target:
