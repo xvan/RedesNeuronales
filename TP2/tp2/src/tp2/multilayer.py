@@ -345,10 +345,13 @@ class GeneticTrainer(AbstractMultilayerTrainer):
         self.cross_over_probability = 0.2
         self.mutation_probability = 0.2
         self.mutation_std = 0.01
-        self.generation_fitness = None
+        self.generation_fitness = List[float]
         self.generation_weights = []
         self.wights_numel = self.calculate_weights_size()
         self.error_target: float = 0.01
+        self.fitness_callback: Callable[[List[float]], None] = lambda c: None
+        self.target_reached = False
+
 
     @property
     def reproduction_odds(self):
@@ -356,13 +359,21 @@ class GeneticTrainer(AbstractMultilayerTrainer):
 
     def train(self):
         self.generate_seed()
-        while True:
+        for _ in range(50000):
             self.generation_fitness = self.calculate_generation_fitness()
-            print(1/max(self.generation_fitness))
+            self.fitness_callback(self.generation_fitness)
             if 1/max(self.generation_fitness) <= self.error_target:
+                self.target_reached = True
                 break
             self.step_generation()
+        self.set_best_weights()
+
+    def set_best_weights(self):
         self.set_weights(self.generation_weights[np.argmax(self.generation_fitness)])
+
+    def target_test(self):
+        self.set_weights()
+        return np.all(y == np.sign(self.mn.process(x)) for (x, y) in self.data)
 
     def step_generation(self):
         survivor_indices = self.choose_survivors()
