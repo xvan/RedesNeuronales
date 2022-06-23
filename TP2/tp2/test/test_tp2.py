@@ -429,7 +429,6 @@ class GeneticTrainerTests(unittest.TestCase):
     def test_calculate_fitness(self):
        self.trainer.train()
 
-
     def test_train_and_process_xor(self):
         self.trainer.train()
         for (x, y) in xor_gate_table:

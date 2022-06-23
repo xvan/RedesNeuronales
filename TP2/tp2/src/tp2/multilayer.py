@@ -341,6 +341,7 @@ class MultilayerAnnealingDut(SimulatedAnnealingDut):
 class GeneticTrainer(AbstractMultilayerTrainer):
     def __init__(self, network: MultilayerNetwork, data: TrainDataType):
         super().__init__(network, data)
+        self.max_iterations = 100000
         self.pool_size = 10
         self.cross_over_probability = 0.2
         self.mutation_probability = 0.2
@@ -359,7 +360,7 @@ class GeneticTrainer(AbstractMultilayerTrainer):
 
     def train(self):
         self.generate_seed()
-        for _ in range(100000):
+        for _ in range(self.max_iterations):
             self.generation_fitness = self.calculate_generation_fitness()
             self.fitness_callback(self.generation_fitness)
             if 1/max(self.generation_fitness) <= self.error_target:
@@ -416,6 +417,9 @@ class GeneticTrainer(AbstractMultilayerTrainer):
     def cross_pair(self, subject_a, subject_b):
         subject_a = copy.deepcopy(subject_a)
         subject_b = copy.deepcopy(subject_b)
+
+        if random.random() < self.cross_over_probability:
+            return subject_a, subject_b
 
         recombination = random.randint(0, np.ceil(self.wights_numel / 2))
 
