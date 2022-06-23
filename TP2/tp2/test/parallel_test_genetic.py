@@ -18,7 +18,7 @@ class ParallelGeneticTest(unittest.TestCase):
         print(ie.mean)
 
     def train_genetic(self):
-        layers = [2, 2, 1]
+        layers = [2, 5, 1]
         mn = MultilayerNetwork(layers)
         trainer = GeneticTrainer(mn, xor_gate_table)
         counter = Counter()
@@ -34,9 +34,14 @@ class ParallelGeneticTest(unittest.TestCase):
             print(cnt)
             if finished:
                 ie.append(cnt)
-            if ie.disc(1.96) < 0.01:
+            if self.break_condition(ie):
                 break
         return ie
+
+    def break_condition(self, ie):
+        print(ie.disc(1.96), ie.mean)
+        return ie.disc(1.96) < ie.mean / 100
+
 
 if __name__ == '__main__':
     unittest.main()
