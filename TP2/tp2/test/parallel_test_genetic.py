@@ -25,18 +25,22 @@ class ParallelGeneticTest(unittest.TestCase):
         print(ie.mean, se.count)
 
     def test_genetics_parallel(self):
-        generation_specimens = [10, 20, 100]
-        cross_probability = [0, 0.25, 0.5]
-        mutation_std = [0.05, 0.1, 0.5]
-
-        param_combinations = [(n, g, c, m) for n, (g, c, m) in
-                              enumerate(itertools.product(generation_specimens, cross_probability, mutation_std))]
+        param_combinations = self.generate_params()
         print(param_combinations)
         print("total: ", len(param_combinations))
         with Pool(processes=8) as pool:  # run no more than 6 at a time
             TT = pool.starmap(self.get_estimation, param_combinations)
             with open(os.path.expanduser("~/results.pkl"), "wb") as fo:
                 pickle.dump(TT, fo)
+
+    @staticmethod
+    def generate_params():
+        generation_specimens = [10, 20, 100]
+        cross_probability = [0, 0.25, 0.5]
+        mutation_std = [0.05, 0.1, 0.5]
+        param_combinations = [(n, g, c, m) for n, (g, c, m) in
+                              enumerate(itertools.product(generation_specimens, cross_probability, mutation_std))]
+        return param_combinations
 
     @staticmethod
     def get_estimation(test_index: int, pool_size: int, cross_over_probability: float,
@@ -50,20 +54,25 @@ class ParallelGeneticTest(unittest.TestCase):
                 success_estimator.append(finished)
                 if finished:
                     iterations_estimator.append(cnt)
+
+                ParallelGeneticTest.logThis(fo, iterations_estimator, success_estimator, test_index)
+
                 if ParallelGeneticTest.one_percent_error(iterations_estimator):
                     break
                 if ParallelGeneticTest.abort_condition(success_estimator):
                     break
 
-                loop_log = "%i:, cnt:%i, ratio:%.2f, dsc:%.2f > mean:%.2f / 100" % (
-                    test_index, success_estimator.count, success_estimator.mean,
-                    iterations_estimator.disc(1.96), iterations_estimator.mean, )
-                print(loop_log)
-                fo.write(loop_log + "\n")
-
         return {"test_index": test_index, "pool_size": pool_size, "cross_over": cross_over_probability,
                 "mutation": mutation_std, "iterations_estimator": iterations_estimator,
                 "success_estimator": success_estimator}
+
+    @staticmethod
+    def logThis(fo, iterations_estimator, success_estimator, test_index):
+        loop_log = "%i:, cnt:%i, ratio:%.2f, dsc:%.2f > mean:%.2f / 100" % (
+            test_index, success_estimator.count, success_estimator.mean,
+            iterations_estimator.disc(1.96), iterations_estimator.mean,)
+        print(loop_log)
+        fo.write(loop_log + "\n")
 
     @staticmethod
     def train_genetic(pool_size, cross_over_probability, mutation_std):
@@ -83,11 +92,12 @@ class ParallelGeneticTest(unittest.TestCase):
 
     @staticmethod
     def abort_condition(ie: IncrementalEstimator) -> bool:
-        if ie.count < 100:
-            return False
-        if ie.disc(1.96) > 0.01:
-            return False
-        return ie.mean < 0.8
+        return ie.count > 100
+        # if ie.count < 100:
+        #     return False
+        # if ie.disc(1.96) > 0.01:
+        #     return False
+        # return ie.mean < 0.8
 
     @staticmethod
     def one_percent_error(ie: IncrementalEstimator) -> bool:
