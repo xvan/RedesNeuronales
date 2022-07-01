@@ -13,16 +13,26 @@ class CircularDataGenerator:
 class KohonenNetwork:
     def __init__(self, shape):
         self.shape: List[int] = shape
+        self.source_map: np.ndarray = np.dstack(np.meshgrid(*[np.arange(n) for n in self.shape]))
         self.weights_map: np.ndarray = None
         self.target: np.ndarray = None
 
-    def train(self, target: List[List[float]]):
+    def set_target(self, target: List[List[float]]):
         self.target = target
         self.initialize_weights_map()
 
-        while True:
+    def train(self,n):
+        sigma = 0.5
+        nabla = 1
+        for _ in range(n):
             for sample_index in np.random.permutation(len(self.target)):
-                index = self.minimum_distance(self.target[sample_index])
+                pattern = self.target[sample_index]
+                index = self.minimum_distance(pattern)
+                distances = np.linalg.norm(self.source_map - self.source_map[index], axis=-1)
+                vecindad = np.exp(-(distances ** 2)/2*sigma)
+                delta_weight = -1 * nabla * (vecindad.transpose() * (self.weights_map - pattern).transpose()).transpose()
+                self.weights_map += delta_weight
+                sigma *= 0.999
 
     def minimum_distance(self, pattern):
         distances = self.distances(pattern)
