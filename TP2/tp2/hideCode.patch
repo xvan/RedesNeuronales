@@ -1,0 +1,51 @@
+--- TP2_Zuloaga.html	2022-06-30 20:14:46.204121388 -0300
++++ TP2_Zuloaga_codeless.html	2022-06-30 20:40:16.483124122 -0300
+@@ -10587,27 +10587,9 @@
+ }
+ /* any special styling for code cells that are currently running goes here */
+ div.input {
+-  page-break-inside: avoid;
+-  /* Old browsers */
+-  display: -webkit-box;
+-  -webkit-box-orient: horizontal;
+-  -webkit-box-align: stretch;
+-  display: -moz-box;
+-  -moz-box-orient: horizontal;
+-  -moz-box-align: stretch;
+-  display: box;
+-  box-orient: horizontal;
+-  box-align: stretch;
+-  /* Modern browsers */
+-  display: flex;
+-  flex-direction: row;
+-  align-items: stretch;
+-  /* Old browsers */
+-  -webkit-box-flex: 0;
+-  -moz-box-flex: 0;
+-  box-flex: 0;
+-  /* Modern browsers */
+-  flex: none;
++  visibility: collapse;
++  height: 0;
++  display: none;
+ }
+ @media (max-width: 540px) {
+   div.input {
+@@ -10958,6 +10940,7 @@
+ }
+ div.output_prompt {
+   color: #d84315;
++  visibility: hidden;
+ }
+ /* This class is the outer container of all output sections. */
+ div.output_area {
+@@ -11092,6 +11075,9 @@
+ /* stdout/stderr are 'text' as well as 'stream', but execute_result/error are *not* streams */
+ div.output_stderr {
+   background: #fdd;
++  visibility: collapse;
++  height: 0;
++  display: none;
+   /* very light red background for stderr */
+ }
+ div.output_latex {
