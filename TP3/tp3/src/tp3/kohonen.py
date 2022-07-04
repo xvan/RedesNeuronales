@@ -50,7 +50,7 @@ class TriangleDataGenerator(DataGenerator):
 class KohonenNetwork:
     def __init__(self, shape):
         self.shape: List[int] = shape
-        self.source_map: np.ndarray = np.squeeze(np.dstack(np.meshgrid(*[np.arange(n) for n in self.shape])))
+        self.source_map: np.ndarray = self.init_source_map()
         self.weights_map: np.ndarray = None
         self.target: np.ndarray = None
         self.final_sigma = 0.1
@@ -58,6 +58,9 @@ class KohonenNetwork:
         self.sigma = self.start_sigma
         self.nabla = self.sigma
         self.step_coeff = None
+
+    def init_source_map(self):
+        return np.dstack(np.meshgrid(*[np.arange(n) for n in self.shape[::-1]]))
 
     def set_target(self, target: List[List[float]]):
         self.target = target
