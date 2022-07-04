@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
-from tp3.kohonen import CircularDataGenerator, KohonenNetwork
+from tp3.kohonen import CircularDataGenerator, KohonenNetwork, SquareDataGenerator
+from tp3.tsp import TspAutomapper
 
 
 class KohonenTestCase(unittest.TestCase):
@@ -21,6 +22,15 @@ class KohonenTestCase(unittest.TestCase):
         kn = KohonenNetwork([5, 5])
         kn.set_target(target)
         kn.train()
+
+
+class TspTestCase(unittest.TestCase):
+    def test_run(self):
+        N = 10
+        target = SquareDataGenerator().generate(N)
+        ta = TspAutomapper(N)
+        ta.set_target(target)
+        ta.train(100)
 
 
 
