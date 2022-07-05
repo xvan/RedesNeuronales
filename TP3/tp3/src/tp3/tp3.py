@@ -29,7 +29,7 @@ def plot_map_for_distribution(generator: DataGenerator, shape=[5, 5]):
     plot_map(kn)
     _ = plt.title("Pesos semillas, en mapa de 5x5")
 
-    kn.train(300)
+    kn.train(400)
 
     plt.figure()
     plt.scatter(target[:, 0], target[:, 1], c="orange")

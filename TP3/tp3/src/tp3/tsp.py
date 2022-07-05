@@ -16,7 +16,7 @@ class TspAutomapper(KohonenNetwork):
     def map_distances(self, index):
         max_delta = 0.5
         distance = super().map_distances(index)/self.shape[-1]
-        return max_delta - np.abs(np.mod(np.abs(distance), 2 * max_delta) - max_delta)
+        return (max_delta - np.abs(np.mod(np.abs(distance), 2 * max_delta) - max_delta))*self.shape[-1]
 
     # def init_source_map(self):
     #     aux = np.linspace(0, 1, self.shape[-1], False).reshape(1, self.shape[-1])
