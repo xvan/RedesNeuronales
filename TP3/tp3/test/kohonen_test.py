@@ -33,6 +33,12 @@ class TspTestCase(unittest.TestCase):
         ta.train(100)
 
 
+class ClusteringCase(unittest.TestCase):
+    def test_run(self):
+        data = np.genfromtxt("../data/datos_para_clustering.csv", delimiter=",")
+        kn = KohonenNetwork([5, 5])
+        kn.set_target(data)
+        kn.train(100)
 
 if __name__ == '__main__':
     unittest.main()

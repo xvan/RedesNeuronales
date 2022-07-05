@@ -48,7 +48,7 @@ def plot_map_for_tsp(n: int):
     kn = TspAutomapper(n)
     kn.set_target(target)
     plot_map(kn)
-    _ = plt.title("Pesos semillas, en mapa de 5x5")
+    _ = plt.title("Pesos semillas, en mapa de 1x%i" % n)
 
     kn.train(1000)
 
