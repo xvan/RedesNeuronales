@@ -1,0 +1,22 @@
+--- TP3_Zuloaga_original.html	2022-07-13 15:06:05.281726707 -0300
++++ TP3_Zuloaga.html	2022-07-13 15:33:33.752689422 -0300
+@@ -6,7 +6,18 @@
+ <title>tp3</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+ 
+ 
+-
++<style type="text/css">
++.jp-Editor{
++	visibility: collapse; 
++	height: 0;
++	display: none;
++}
++.jp-InputArea-prompt{
++	visibility: collapse; 
++	height: 0;
++	display: none;
++}
++</style>
+ 
+ <style type="text/css">
+     pre { line-height: 125%; }
