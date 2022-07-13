@@ -69,7 +69,7 @@ def plot_hitmap(hitmap: np.ndarray, with_tags = True):
     # Loop over data dimensions and create text annotations.
     for idx in np.ndindex(hitmap.shape):
         text = ax.text(idx[1], idx[0], ("%.2f" % hitmap[idx]).replace(".00",""),
-                       ha="center", va="center", c="w")
+                       ha="center", va="center")
 
 
 def plot_mesh(kc: KohonenClustering):
@@ -92,16 +92,3 @@ def plot_mesh(kc: KohonenClustering):
         ax.add_collection(lc)
 
     ax.scatter(xx, yy, c="orange")
-    #lc = LineCollection(lines.reshape(-1, 2, 2), array=c, linewidths=3)
-
-
-
-    # lc1 = LineCollection(segs1)
-    # #lc1.set_array(z1)
-    # plt.gca().add_collection(lc1)
-
-    # segs2 = segs1.transpose(1, 0, 2)
-    # z2 = np.linalg.norm(kc.kn.weights_map[:, :-1, :] - kc.kn.weights_map[:, 1:, :], axis=-1)
-    # lc2 = LineCollection(segs2)
-    # #lc2.set_array(z2)
-    # plt.gca().add_collection(lc2)
