@@ -1,3 +1,4 @@
+import itertools
 from abc import ABCMeta, abstractmethod
 from typing import List
 
@@ -115,3 +116,47 @@ class KohonenNetwork:
     @property
     def target_dim(self):
         return np.shape(self.target)[1]
+
+
+class KohonenClustering:
+    def __init__(self, shape):
+        self.kn:KohonenNetwork = KohonenNetwork(shape)
+
+
+    @staticmethod
+    def generate_clusters(weights_map, target):
+        dt = np.linalg.norm(weights_map[:, :, None, :] - target[None, None, :, :], axis=-1)
+        urv_idx = np.unravel_index(dt.reshape(-1, len(target)).argmin(axis=0), weights_map.shape[:-1])
+        idx, cnt = np.unique(urv_idx, axis=1, return_counts=True)
+        tgt = np.zeros(weights_map.shape[:-1])
+        tgt[tuple(idx)] = cnt
+        return tgt
+
+    def process(self, target, iterations: int = 100):
+        self.kn.set_target(target)
+        self.kn.train(iterations)
+        return self.generate_clusters(self.kn.weights_map, self.kn.target)
+
+    def mean_distances(self):
+        template = np.zeros(len(self.kn.shape), dtype=np.int)
+        template[0] = 1
+        neighbour_mask = np.array([d * np.roll(template, r) for r, d in
+                               itertools.product(range(len(template)), (1, -1))])
+
+        u_matrix = np.zeros(self.kn.shape)
+
+        for idx in np.ndindex(tuple(self.kn.shape)):
+            unfiltered_neighbours = idx + neighbour_mask
+            neighbours = unfiltered_neighbours[
+                ((0 <= unfiltered_neighbours)
+                 & (unfiltered_neighbours < self.kn.shape)).all(axis=1)]
+
+
+            u_matrix[idx] = np.linalg.norm(
+                self.kn.weights_map[tuple(neighbours.transpose())] - self.kn.weights_map[idx],
+                axis=-1
+            ).mean()
+
+        return u_matrix
+
+
